@@ -28,7 +28,7 @@ __*ref*__
 Reference clip that misaligned clip will be aligned to. Must be in RGBS format.
 
 __*precision*__  
-Possible values in % are "50", "100", "200", "400" and "800". Higher values will internally align at higher resolutions to increase precision, which will in turn increase processing time and VRAM usage fast. Lower values are less precise, but can align over larger distances.  
+Possible values in % are "50", "100", "200", "400" and "800". Higher values will internally align at higher resolutions to increase precision, which will in turn increase processing time and VRAM usage fast. Lower values are less precise, but can align over larger distances. For problematic cases it can also be helpful to chain multiple alignment calls with increasing precision.  
 If the alignment is very close, try a high value.  
 If the alignment is not very close, try a low value.  
 
