@@ -19,7 +19,7 @@ import torch.nn.functional as F
 import cv2
 from enum import Enum
 
-from vs_align.rife.IFNet_HDv3_v4_14_align import IFNet
+from .rife.IFNet_HDv3_v4_14_align import IFNet
 
 core = vs.core
 
@@ -57,7 +57,8 @@ def calculate_padding(height, width, precision):
 
 def spatial(clip, ref, precision="100", iterations=1, blur_strength=0, ensemble=True, device="cuda"):
     device = torch.device(device)
-    model_path = os.path.join('vs_align', 'rife', 'flownet_v4.14.pkl')
+    current_folder = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_folder, 'rife', 'flownet_v4.14.pkl')
     state_dict = torch.load(model_path, map_location=device)
     new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
     model = IFNet().to(device)
