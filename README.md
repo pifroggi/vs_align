@@ -7,7 +7,7 @@ Examples: https://slow.pics/c/rqeq3D97
 * pip install opencv-python
 * [pytorch](https://pytorch.org/)
 * [vstools](https://github.com/Jaded-Encoding-Thaumaturgy/vs-tools)
-* [julek-plugin for butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, for temporal alignment precision=2)
+* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, for using  butteraugli when setting temporal alignment to precision=2)
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, for temporal alignment resampling)
 
 ### Setup
@@ -76,7 +76,7 @@ Threshold for fallback clip. If frame difference is higher than this value, fall
 
 __*precision*__  
 1 = more wrong matches, very fast, fine if clips are basically identical besides the temporal misalignment, uses Vapoursynth's [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html).  
-2 = less wrong matches, much slower, much better if clips look more different, at half resolution still better than 1 at full, uses [Butteraugli](https://github.com/fdar0536/VapourSynth-butteraugli).
+2 = less wrong matches, much slower, much better if clips look more different, at half resolution still better than 1 at full, uses [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli).
 
 __*debug*__  
 Shows computed difference values for all frames and the best match directly on the frame.
