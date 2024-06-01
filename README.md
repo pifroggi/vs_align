@@ -7,7 +7,7 @@ Examples: https://slow.pics/c/rqeq3D97
 * pip install opencv-python
 * [pytorch](https://pytorch.org/)
 * [vstools](https://github.com/Jaded-Encoding-Thaumaturgy/vs-tools)
-* [Butteraugli](https://github.com/fdar0536/VapourSynth-butteraugli) (optional, for temporal alignment precision=2)
+* [julek-plugin for butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, for temporal alignment precision=2)
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, for temporal alignment resampling)
 
 ### Setup
@@ -82,8 +82,9 @@ __*debug*__
 Shows computed difference values for all frames and the best match directly on the frame.
 
 __*clip_num, clip_den, ref_num, ref_den*__  
-Fps Numerator and Denominator for clip and ref (clip2 uses the same as clip). Useful if the two clips have different frame rates. For example one being 23.976 fps and the other being 29.97 fps, in which case clip will be resampled to match ref.  
-If set, frames will be doubled internally, then resampled, then aligned, then halved to original again. This is done to make sure no frames are lost, but means processing will take double as long, so only set this if needed! If set, all input clips must be in YUV format.
+Resamples clip to ref. Fps Numerator and Denominator for clip and ref (clip2 uses the same as clip).  
+This is __optional__ and should __only__ be set if clip and ref have different frame rates (for example 23.976fps and 29.97fps), as it will double processing time. If set, all input clips must be in YUV8..16 format.  
+If set, frames will be doubled internally, then resampled, then aligned, then halved again. This is done to make sure no frames are lost, but means processing will take double as long, so only set this if needed!
 
 
 
