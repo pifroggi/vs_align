@@ -63,11 +63,11 @@ __*`tr`*__
 Temporal radius. How many frames it will search forward and back to find a match.
 
 __*`precision`*__  
-| Mode | Precision | Speed     | Usecase                                                                           | Method
-| ---- | --------- | --------- | --------------------------------------------------------------------------------- | ------
-| 1    | worst     | very fast | when clips are basically identical besides the temporal misalignment              | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
-| 2    | better    | slow      | more robust to differences between clips                                          | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
-| 3    | best      | very slow | extremely accurate with large differences and spatial misalignments between clips | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/tree/main)
+| Value | Precision | Speed     | Usecase                                                                           | Method
+| ----- | --------- | --------- | --------------------------------------------------------------------------------- | ------
+| 1     | worst     | very fast | when clips are basically identical besides the temporal misalignment              | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
+| 2     | better    | slow      | more robust to differences between clips                                          | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
+| 3     | best      | very slow | extremely accurate with large differences and spatial misalignments between clips | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/tree/main)
 
 __*`fallback`* (optional)__  
 Optional fallback clip in case no frame below thresh can be found. Must have the same format and dimensions as clip (or clip2 if it is set).
@@ -81,7 +81,7 @@ Possible values are "cuda" to use with an Nvidia GPU, or "cpu".
 Only has an effect with "precision=3", which will be very slow on CPU.  
 
 __*`debug`* (optional)__  
-Shows computed difference values for all frames and the best match directly on the frame.
+Overlays computed difference values for all frames and the best match directly onto the frame.
 
 __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__   
 Resamples clip to match ref's frame rate. Numerator and Denominator for clip and ref (clip2 uses the same as clip). Set this only if clip and ref have different frame rates (e.g., 29.97fps and 23.976fps), as it will double processing time. Requires all input clips to be in YUV8..16 format.  
