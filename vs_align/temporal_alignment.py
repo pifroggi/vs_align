@@ -27,12 +27,12 @@ def vs_pyiqa(clip, ref, iqa_model, metric='topiq_fr'):
 
         score = iqa_model(clip_tensor, ref_tensor).cpu().item()
         score = 1 - score
-        output_clip = core.std.SetFrameProp(clip, prop='pyiqa_Topiq', floatval=score)
+        output_clip = core.std.SetFrameProp(clip, prop='pyiqa_TOPIQ', floatval=score)
         return output_clip
 
     return core.std.FrameEval(clip, eval=_evaluate_frame, prop_src=[clip])
 
-def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device='cuda' if torch.cuda.is_available() else 'cpu', debug=False):
+def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device='cuda' if torch.cuda.is_available() else 'cpu', debug=False):
     from vstools import get_prop
     from pyiqa import create_metric
     
@@ -65,8 +65,8 @@ def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1
         metric = 'topiq_fr'
         iqa_model = create_metric(metric, metric_mode='FR', device=torch.device(device))
         process = vs_pyiqa
-        prop_key = "pyiqa_Topiq"
-        process_name = "Topiq"
+        prop_key = "pyiqa_TOPIQ"
+        process_name = "TOPIQ"
         select_func = min
         compare_func = lambda score: score < thresh
     elif precision == 2:
