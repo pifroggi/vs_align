@@ -7,8 +7,8 @@ Examples: https://slow.pics/c/rqeq3D97
 * pip install opencv-python
 * [pytorch](https://pytorch.org/)
 * [vstools](https://github.com/Jaded-Encoding-Thaumaturgy/vs-tools)
-* pip install pyiqa (optional, only for temporal alignment to precision=3)
-* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, only for temporal alignment to precision=2)
+* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, only for temporal alignment precision=2)
+* pip install pyiqa (optional, only for temporal alignment precision=3)
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, only for temporal alignment with different frame rates)
 
 ### Setup
