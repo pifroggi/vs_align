@@ -1,11 +1,41 @@
 import vapoursynth as vs
+import torch
+import numpy as np
+
 core = vs.core
 
 #adapted from "decimatch" by po5 https://gist.github.com/po5/b6a49662149005922b9127926f96e68b
 
-def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1, clip_num=None, clip_den=None, ref_num=None, ref_den=None, debug=False):
-    from vstools import get_prop
+def frame_to_tensor(frame: vs.VideoFrame) -> torch.Tensor:
+    array = np.stack([np.asarray(frame[p]) for p in range(frame.format.num_planes)], axis=-1)
+    array = np.maximum(0, np.minimum(array, 1))
+    tensor = torch.from_numpy(array).permute(2, 0, 1).unsqueeze(0)
+    return tensor
 
+def vs_pyiqa(clip, ref, iqa_model, metric='topiq_fr'):
+    clip_tensor_cache = {}
+
+    def _evaluate_frame(n, f):
+        if n not in clip_tensor_cache:
+            clip_frame = clip.get_frame(n)
+            clip_tensor_cache[n] = frame_to_tensor(clip_frame)
+        
+        clip_tensor = clip_tensor_cache[n]
+
+        ref_frame = ref.get_frame(n)
+        ref_tensor = frame_to_tensor(ref_frame)
+
+        score = iqa_model(clip_tensor, ref_tensor).cpu().item()
+        score = 1 - score
+        output_clip = core.std.SetFrameProp(clip, prop='pyiqa_Topiq', floatval=score)
+        return output_clip
+
+    return core.std.FrameEval(clip, eval=_evaluate_frame, prop_src=[clip])
+
+def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device='cuda' if torch.cuda.is_available() else 'cpu', debug=False):
+    from vstools import get_prop
+    from pyiqa import create_metric
+    
     #checks
     if clip.format.id != ref.format.id:
         raise ValueError("Clip and ref must be the same format.")
@@ -30,14 +60,27 @@ def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1
         clip2 = clip
 
     #precision modes
-    if precision == 2:
+    iqa_model = None
+    if precision == 3:
+        metric = 'topiq_fr'
+        iqa_model = create_metric(metric, metric_mode='FR', device=torch.device(device))
+        process = vs_pyiqa
+        prop_key = "pyiqa_Topiq"
+        process_name = "Topiq"
+        select_func = min
+        compare_func = lambda score: score < thresh
+    elif precision == 2:
         process = core.julek.Butteraugli
         prop_key = "_FrameButteraugli"
         process_name = "Butteraugli"
-    else: #precision == 1
+        select_func = min
+        compare_func = lambda score: score < thresh
+    else:  #precision == 1
         process = core.std.PlaneStats
         prop_key = "PlaneStatsDiff"
         process_name = "PlaneStats"
+        select_func = min
+        compare_func = lambda score: score < thresh
 
     if clip_num is not None and clip_den is not None and ref_num is not None and ref_den is not None:
         #double framerate to make sure no frames are lost during resampling
@@ -60,18 +103,33 @@ def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1
         clip2 = core.std.AssumeFPS(clip2, fpsnum=ref_num, fpsden=ref_den)
         clip = clip_tivtc
 
-    #convert to RGB24 for butteraugli based on the color family
-    if clip.format.color_family == vs.YUV:
-        clip = core.resize.Point(clip, format=vs.RGB24, matrix_in_s="709", range_in_s='full', range_s='full')
-        ref = core.resize.Point(ref, format=vs.RGB24, matrix_in_s="709", range_in_s='full', range_s='full')
-    elif clip.format.color_family == vs.RGB:
-        clip = core.resize.Point(clip, format=vs.RGB24)
-        ref = core.resize.Point(ref, format=vs.RGB24)
-    elif clip.format.color_family == vs.GRAY:
-        clip = core.resize.Point(clip, format=vs.RGB24)
-        ref = core.resize.Point(ref, format=vs.RGB24)
-    else:
-        raise ValueError("Unsupported format.")
+    if precision == 2:
+        #convert to RGB24 for butteraugli based on the color family
+        if clip.format.color_family == vs.YUV:
+            clip = core.resize.Point(clip, format=vs.RGB24, matrix_in_s="709", range_in_s='full', range_s='full')
+            ref = core.resize.Point(ref, format=vs.RGB24, matrix_in_s="709", range_in_s='full', range_s='full')
+        elif clip.format.color_family == vs.RGB:
+            clip = core.resize.Point(clip, format=vs.RGB24)
+            ref = core.resize.Point(ref, format=vs.RGB24)
+        elif clip.format.color_family == vs.GRAY:
+            clip = core.resize.Point(clip, format=vs.RGB24)
+            ref = core.resize.Point(ref, format=vs.RGB24)
+        else:
+            raise ValueError("Unsupported clip format.")
+
+    if precision == 3:
+        #convert to RGBS for butteraugli pyiqa on the color family
+        if clip.format.color_family == vs.YUV:
+            clip = core.resize.Point(clip, format=vs.RGBS, matrix_in_s="709", range_in_s='full', range_s='full')
+            ref = core.resize.Point(ref, format=vs.RGBS, matrix_in_s="709", range_in_s='full', range_s='full')
+        elif clip.format.color_family == vs.RGB:
+            clip = core.resize.Point(clip, format=vs.RGBS)
+            ref = core.resize.Point(ref, format=vs.RGBS)
+        elif clip.format.color_family == vs.GRAY:
+            clip = core.resize.Point(clip, format=vs.RGBS)
+            ref = core.resize.Point(ref, format=vs.RGBS)
+        else:
+            raise ValueError("Unsupported clip format.")
 
     #helper function to generate shifts
     def gen_shifts(c, n, forward=True, backward=True):
@@ -91,15 +149,15 @@ def temporal(clip, ref, clip2=None, tr=30, fallback=None, thresh=40, precision=1
         clip = gen_shifts(clip, tr)
         clip2 = gen_shifts(clip2, tr)
 
-    diffs = [process(c, ref) for c in clip]
+    diffs = [process(c, ref, iqa_model) if iqa_model else process(c, ref) for c in clip]
     indices = list(range(len(diffs)))
     do_debug, alignment = debug if isinstance(debug, tuple) else (debug, 7)
 
     def _select(n, f):
         scores = [get_prop(diff.props, prop_key, float) for diff in f]
-        best = min(indices, key=lambda i: scores[i])
+        best = select_func(indices, key=lambda i: scores[i])
 
-        if fallback and any(score < thresh for score in scores):
+        if fallback and any(compare_func(score) for score in scores):
             best_clip = clip2[best]
         elif fallback:
             best_clip = fallback
