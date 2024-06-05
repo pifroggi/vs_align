@@ -50,12 +50,12 @@ Aligns clips timewise by searching through one clip and selecting the frame that
 Example usage if clips have the same frame rate:
 
     import vs_align
-    clip = vs_align.temporal(clip, ref, clip2, tr=20, fallback, thresh=40, precision=1, debug=False)
+    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, debug=False)
 
 Example usage if clips have different frame rate:
 
     import vs_align
-    clip = vs_align.temporal(clip, ref, clip2, tr=20, fallback, thresh=40, precision=1, clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001, debug=False)
+    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001, debug=False)
 
 __*clip*__  
 Misaligned clip. Must be same format and dimensions as ref.
@@ -63,32 +63,39 @@ Misaligned clip. Must be same format and dimensions as ref.
 __*ref*__  
 Reference clip that misaligned clip will be aligned to. Must be same format and dimensions as clip.
 
-__*clip2*__  
+__*clip2* (optional)__  
 Clip and ref will be used for processing, but the actual output frame is copied from clip2 if set. This is useful if you would like to do preprocessing on clip and ref (like downsizing to increase speed), but would like the ouput frame to be unaltered.
 
 __*tr*__  
 Temporal radius. How many frames it will search forward and back to find a match.
 
-__*fallback*__  
+__*precision*__  
+| Mode | Precision | Speed     | Usecase                                                                           | Method
+| ---- | --------- | --------- | --------------------------------------------------------------------------------- | ------
+| 1    | worst     | very fast | clips are basically identical besides the temporal misalignment                   | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
+| 2    | better    | slow      | more robust to differences between clips, uses                                    | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
+| 3    | best      | very slow | extremely accurate with large differences and spatial misalignments between clips | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/tree/main)
+
+__*fallback* (optional)__  
 Optional fallback clip in case no frame below thresh can be found. Must have the same format and dimensions as clip (or clip2 if it is set).
 
-__*thresh*__  
-Threshold for fallback clip. If frame difference is higher than this value, fallback clip is used. Does nothing if no fallback clip is set. Use debug=True to get an idea for the values.
+__*thresh* (optional)__  
+Threshold for fallback clip. If frame difference is higher than this value, fallback clip is used. Does nothing if no fallback clip is set. Use "debug=True" to get an idea for the values.
 
-__*precision*__  
-1 = more wrong matches, very fast, fine if clips are basically identical besides the temporal misalignment, uses Vapoursynth's [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html).  
-2 = less wrong matches, much slower, much better if clips look more different, at half resolution still better than 1 at full, uses [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli).
+__*device* (optional)__  
+Only has an effect with "precision=3". Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be very slow on CPU.
 
-__*debug*__  
+__*debug* (optional)__  
 Shows computed difference values for all frames and the best match directly on the frame.
 
-__*clip_num, clip_den, ref_num, ref_den*__  
+__*clip_num, clip_den, ref_num, ref_den* (optional)__   
 Resamples clip to ref. Fps Numerator and Denominator for clip and ref (clip2 uses the same as clip).  
 This is __optional__ and should __only__ be set if clip and ref have different frame rates (for example 23.976fps and 29.97fps), as it will double processing time. If set, all input clips must be in YUV8..16 format.  
 If set, frames will be doubled internally, then resampled, then aligned, then halved again. This is done to make sure no frames are lost, but means processing will take double as long, so only set this if needed!
 
+<br />
 
+## Tips
+For problematic cases of spatial misalignment, it can be helpful to chain multiple alignment calls with increasing precision.
 
-
-
-
+Temporal Alignment "precision=3" may need a little time on the first run, as the model needs to download first.
