@@ -13,18 +13,11 @@ def frame_to_tensor(frame: vs.VideoFrame) -> torch.Tensor:
     return tensor
 
 def vs_pyiqa(clip, ref, iqa_model, metric='topiq_fr'):
-    clip_tensor_cache = {}
-
     def _evaluate_frame(n, f):
-        if n not in clip_tensor_cache:
-            clip_frame = clip.get_frame(n)
-            clip_tensor_cache[n] = frame_to_tensor(clip_frame)
-        
-        clip_tensor = clip_tensor_cache[n]
-
+        clip_frame = clip.get_frame(n)
+        clip_tensor = frame_to_tensor(clip_frame)
         ref_frame = ref.get_frame(n)
         ref_tensor = frame_to_tensor(ref_frame)
-
         score = iqa_model(clip_tensor, ref_tensor).cpu().item()
         score = 1 - score
         output_clip = core.std.SetFrameProp(clip, prop='pyiqa_TOPIQ', floatval=score)
