@@ -45,17 +45,10 @@ Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be ver
 <br />
 
 ## Temporal Alignment
-Aligns clips timewise by searching through one clip and selecting the frame that most closely matches a reference frame in another clip, based on the smallest differences. It is recommended trying to minimize the difference between the two clips by preprocessing. For example removing black borders, cropping to the overlapping region, rough color matching, dehaloing. The closer the clips look to each other, the better the temporal alignment will be. Adapted from [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5.
-
-Example usage if clips have the same frame rate:
+Aligns clips timewise by searching through one clip and selecting the frame that most closely matches the reference clip. It is recommended trying to minimize the difference between the two clips by preprocessing. For example removing black borders, cropping to the overlapping region, rough color matching, dehaloing. The closer the clips look to each other, the better the temporal alignment will be. Adapted from [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5.
 
     import vs_align
-    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, debug=False)
-
-Example usage if clips have different frame rate:
-
-    import vs_align
-    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001, debug=False)
+    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, device="cuda", debug=False)
 
 __*`clip`*__  
 Misaligned clip. Must be same format and dimensions as ref.
@@ -91,9 +84,9 @@ __*`debug`* (optional)__
 Shows computed difference values for all frames and the best match directly on the frame.
 
 __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__   
-Resamples clip to ref. Fps Numerator and Denominator for clip and ref (clip2 uses the same as clip).  
-This is __optional__ and should __only__ be set if clip and ref have different frame rates (for example 23.976fps and 29.97fps), as it will double processing time. If set, all input clips must be in YUV8..16 format.  
-If set, frames will be doubled internally, then resampled, then aligned, then halved again. This is done to make sure no frames are lost, but means processing will take double as long, so only set this if needed!
+Resamples clip to match ref's frame rate. Numerator and Denominator for clip and ref (clip2 uses the same as clip). Set this only if clip and ref have different frame rates (e.g., 29.97fps and 23.976fps), as it will double processing time. Requires all input clips to be in YUV8..16 format.  
+To avoid removal of the wrong frames during resampling, frames are doubled, resampled, aligned, then halved again.  
+Example: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 <br />
 
