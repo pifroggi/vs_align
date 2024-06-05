@@ -7,8 +7,9 @@ Examples: https://slow.pics/c/rqeq3D97
 * pip install opencv-python
 * [pytorch](https://pytorch.org/)
 * [vstools](https://github.com/Jaded-Encoding-Thaumaturgy/vs-tools)
-* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, for using  butteraugli when setting temporal alignment to precision=2)
-* [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, for temporal alignment resampling)
+* pip install pyiqa (optional, only for temporal alignment to precision=3)
+* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, only for temporal alignment to precision=2)
+* [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, only for temporal alignment with different frame rates)
 
 ### Setup
 Drop the entire "vs_align" folder to where you typically load scripts from.
