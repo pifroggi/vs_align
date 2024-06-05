@@ -72,7 +72,7 @@ Temporal radius. How many frames it will search forward and back to find a match
 __*`precision`*__  
 | Mode | Precision | Speed     | Usecase                                                                           | Method
 | ---- | --------- | --------- | --------------------------------------------------------------------------------- | ------
-| 1    | worst     | very fast | clips are basically identical besides the temporal misalignment                   | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
+| 1    | worst     | very fast | when clips are basically identical besides the temporal misalignment              | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
 | 2    | better    | slow      | more robust to differences between clips                                          | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
 | 3    | best      | very slow | extremely accurate with large differences and spatial misalignments between clips | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/tree/main)
 
