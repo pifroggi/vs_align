@@ -16,102 +16,81 @@ import os
 import torch
 import numpy as np
 import torch.nn.functional as F
-import cv2
-from enum import Enum
-
+from .enums import SpatialPrecision, Device
 from .rife.IFNet_HDv3_v4_14_align import IFNet
 
 core = vs.core
 
-def array_to_frame(img: np.ndarray, frame: vs.VideoFrame):
+def tensor_to_frame(img: torch.Tensor, frame: vs.VideoFrame):
+    img_np = img.permute(1, 2, 0).cpu().numpy()
     for p in range(3):
-        pls = frame[p]
-        frame_arr = np.asarray(pls)
-        np.copyto(frame_arr, img[:, :, p])
+        np.copyto(np.asarray(frame[p]), img_np[:, :, p])
 
-def frame_to_array(frame: vs.VideoFrame) -> np.ndarray:
-    return np.dstack([np.asarray(frame[p]) for p in range(frame.format.num_planes)])
+def frame_to_tensor(frame: vs.VideoFrame, device: torch.device) -> torch.Tensor:
+    frame_np = np.dstack([np.asarray(frame[p]) for p in range(frame.format.num_planes)])
+    return torch.from_numpy(frame_np).permute(2, 0, 1).unsqueeze(0).to(device)
 
-class PrecisionMode(Enum):
-    FIFTY_PERCENT = 2000
-    ONE_HUNDRED_PERCENT = 1000
-    TWO_HUNDRED_PERCENT = 500
-    FOUR_HUNDRED_PERCENT = 250
-    EIGHT_HUNDRED_PERCENT = 125
-
-def calculate_padding(height, width, precision):
-    if precision == PrecisionMode.EIGHT_HUNDRED_PERCENT:
-        pad_value = 4
-    elif precision == PrecisionMode.FOUR_HUNDRED_PERCENT:
-        pad_value = 8
-    elif precision == PrecisionMode.TWO_HUNDRED_PERCENT:
-        pad_value = 16
-    elif precision == PrecisionMode.ONE_HUNDRED_PERCENT:
-        pad_value = 32
-    else:
-        pad_value = 64
-    
-    pad_height = (pad_value - height % pad_value) % pad_value
-    pad_width = (pad_value - width % pad_value) % pad_value
+def calculate_padding(height, width, padding):
+    pad_height = (padding - height % padding) % padding
+    pad_width = (padding - width % padding) % padding
     return pad_height, pad_width
 
-def spatial(clip, ref, precision="100", iterations=1, blur_strength=0, ensemble=True, device="cuda"):
+def spatial(clip, ref, precision=3, iterations=1, blur_strength=0, ensemble=True, device="cuda"):
+    if isinstance(device, Device):
+        device = device.value
     device = torch.device(device)
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(current_folder, 'rife', 'flownet_v4.14.pkl')
+    model_path = os.path.join(current_folder, 'rife', 'flownet_v4.15.pkl')
     state_dict = torch.load(model_path, map_location=device)
     new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
     model = IFNet().to(device)
     model.load_state_dict(new_state_dict)
     model.eval()
 
-    #convert precision to PrecisionMode enum
-    precision_value = int(precision)
-    precision_enum_map = {
-        50: PrecisionMode.FIFTY_PERCENT,
-        100: PrecisionMode.ONE_HUNDRED_PERCENT,
-        200: PrecisionMode.TWO_HUNDRED_PERCENT,
-        400: PrecisionMode.FOUR_HUNDRED_PERCENT,
-        800: PrecisionMode.EIGHT_HUNDRED_PERCENT
+    precision_value_map = {
+        1: (2,    64), #50%
+        2: (1,    32), #100%
+        3: (0.5,  16), #200%
+        4: (0.25,  8), #400%
+        5: (0.125, 4)  #800%
     }
 
-    enum_precision = precision_enum_map.get(precision_value, PrecisionMode.ONE_HUNDRED_PERCENT)
-    multiplier = enum_precision.value / 1000
+    if isinstance(precision, SpatialPrecision):
+        precision = precision.value
+    if precision not in precision_value_map:
+        raise ValueError("Precision must be 1, 2, 3, 4, or 5.")
+
+    multiplier, padding = precision_value_map[precision]
 
     def align(n, f):
-    
-        frame1 = frame_to_array(f[0])
-        frame2 = frame_to_array(f[1])
-        h, w, _ = frame1.shape
+        frame1 = frame_to_tensor(f[0], device)
+        frame2 = frame_to_tensor(f[1], device)
+        _, _, h, w = frame1.shape
 
-        #resize and shift target image to match source dimensions
-        frame2_resized = cv2.resize(frame2, (w, h), interpolation=cv2.INTER_LANCZOS4)
-        frame2_resized = np.roll(frame2_resized, -1, axis=1)
-        frame2_resized[:, -1] = frame2_resized[:, -2]
+        #resize frame to reference frame
+        if frame1.shape != frame2.shape:
+            frame2 = torch.nn.functional.interpolate(frame2, size=(h, w), mode='bicubic', align_corners=False)
 
         #calculate and apply padding based on precision
-        pad_h, pad_w = calculate_padding(h, w, precision)
+        pad_h, pad_w = calculate_padding(h, w, padding)
         top_pad = pad_h // 2
         bottom_pad = pad_h - top_pad
         left_pad = pad_w // 2
         right_pad = pad_w - left_pad
-        frame2_padded = np.pad(frame2_resized, ((top_pad, bottom_pad), (left_pad, right_pad), (0, 0)), mode='edge')
-        frame1_padded = np.pad(frame1, ((top_pad, bottom_pad), (left_pad, right_pad), (0, 0)), mode='edge')
+        frame2_padded = torch.nn.functional.pad(frame2, (left_pad, right_pad, top_pad, bottom_pad), mode='replicate')
+        frame1_padded = torch.nn.functional.pad(frame1, (left_pad, right_pad, top_pad, bottom_pad), mode='replicate')
+        frame2_padded.clamp_(0, 1)
+        frame1_padded.clamp_(0, 1)
 
-        #convert to tensors, concatenate, and align
-        img0 = torch.from_numpy(frame1_padded).permute(2, 0, 1).unsqueeze(0).to(device)
-        img1 = torch.from_numpy(frame2_padded).permute(2, 0, 1).unsqueeze(0).to(device)
-        x = torch.cat((img0, img1), 1)
-
+        #align
         with torch.no_grad():
-            aligned_img0, _ = model(x, multiplier=multiplier, num_iterations=iterations, blur_strength=blur_strength, ensemble=ensemble)
+            aligned_img0, _ = model(frame1_padded, frame2_padded, multiplier=multiplier, num_iterations=iterations, blur_strength=blur_strength, ensemble=ensemble, device=device)
 
-        #prepare and return the aligned output
-        output_img = aligned_img0.squeeze(0).permute(1, 2, 0).cpu().numpy()
-        output_img_cropped = output_img[top_pad:top_pad+h, left_pad:left_pad+w]
+        #crop
+        output_img_cropped = aligned_img0.squeeze(0)[:, top_pad:top_pad+h, left_pad:left_pad+w]
 
         fout = f[0].copy()
-        array_to_frame(output_img_cropped, fout)
+        tensor_to_frame(output_img_cropped, fout)
 
         return fout
 
