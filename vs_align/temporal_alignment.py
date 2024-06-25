@@ -1,23 +1,25 @@
 import vapoursynth as vs
 import torch
 import numpy as np
+from .enums import TemporalPrecision, Device
 
 core = vs.core
 
 #adapted from "decimatch" by po5 https://gist.github.com/po5/b6a49662149005922b9127926f96e68b
 
-def frame_to_tensor(frame: vs.VideoFrame) -> torch.Tensor:
-    array = np.stack([np.asarray(frame[p]) for p in range(frame.format.num_planes)], axis=-1)
-    array = np.maximum(0, np.minimum(array, 1))
-    tensor = torch.from_numpy(array).permute(2, 0, 1).unsqueeze(0)
-    return tensor
+def frame_to_tensor(frame: vs.VideoFrame, device: str) -> torch.Tensor:
+    array = np.empty((frame.height, frame.width, 3), dtype=np.float32)
+    for p in range(frame.format.num_planes):
+        array[..., p] = np.asarray(frame[p], dtype=np.float32)
+    tensor = torch.from_numpy(array)
+    tensor.clamp_(0, 1)
+    return tensor.permute(2, 0, 1).unsqueeze(0)
 
-def vs_pyiqa(clip, ref, iqa_model, metric='topiq_fr'):
+def vs_pyiqa(clip, ref, iqa_model, device, metric='topiq_fr'):
     def _evaluate_frame(n, f):
-        clip_frame = clip.get_frame(n)
-        clip_tensor = frame_to_tensor(clip_frame)
         ref_frame = ref.get_frame(n)
-        ref_tensor = frame_to_tensor(ref_frame)
+        ref_tensor = frame_to_tensor(ref_frame, device)
+        clip_tensor = frame_to_tensor(f, device)
         score = iqa_model(clip_tensor, ref_tensor).cpu().item()
         score = 1 - score
         output_clip = core.std.SetFrameProp(clip, prop='pyiqa_TOPIQ', floatval=score)
@@ -25,11 +27,17 @@ def vs_pyiqa(clip, ref, iqa_model, metric='topiq_fr'):
 
     return core.std.FrameEval(clip, eval=_evaluate_frame, prop_src=[clip])
 
-def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device='cuda' if torch.cuda.is_available() else 'cpu', debug=False):
+def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda" if torch.cuda.is_available() else "cpu", debug=False):
     from vstools import get_prop
     from pyiqa import create_metric
     
-    #checks
+    # convert enums
+    if isinstance(device, Device):
+        device = device.value
+    if isinstance(precision, TemporalPrecision):
+        precision = precision.value
+
+    # checks
     if clip.format.id != ref.format.id:
         raise ValueError("Clip and ref must be the same format.")
     if clip.width != ref.width or clip.height != ref.height:
@@ -48,11 +56,11 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
         if clip.format.color_family != vs.YUV:
             raise ValueError("All input clips must be in YUV format when using clips with different frame rates.")
 
-    #if clip2 is not set, use clip
+    # if clip2 is not set, use clip
     if clip2 is None:
         clip2 = clip
 
-    #precision modes
+    # precision modes
     iqa_model = None
     if precision == 3:
         metric = 'topiq_fr'
@@ -142,7 +150,7 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
         clip = gen_shifts(clip, tr)
         clip2 = gen_shifts(clip2, tr)
 
-    diffs = [process(c, ref, iqa_model) if iqa_model else process(c, ref) for c in clip]
+    diffs = [process(c, ref, iqa_model, device) if iqa_model else process(c, ref) for c in clip]
     indices = list(range(len(diffs)))
     do_debug, alignment = debug if isinstance(debug, tuple) else (debug, 7)
 
