@@ -63,13 +63,13 @@ def spatial(clip, ref, precision=3, iterations=1, blur_strength=0, ensemble=True
     multiplier, padding = precision_value_map[precision]
 
     def align(n, f):
-        frame1 = frame_to_tensor(f[0], device)
-        frame2 = frame_to_tensor(f[1], device)
-        _, _, h, w = frame1.shape
+        fclip = frame_to_tensor(f[0], device)
+        fref = frame_to_tensor(f[1], device)
+        _, _, h, w = fref.shape
 
         #resize frame to reference frame
-        if frame1.shape != frame2.shape:
-            frame2 = torch.nn.functional.interpolate(frame2, size=(h, w), mode='bicubic', align_corners=False)
+        if fclip.shape != fref.shape:
+            fclip = torch.nn.functional.interpolate(fclip, size=(h, w), mode='bicubic', align_corners=False)
 
         #calculate and apply padding based on precision
         pad_h, pad_w = calculate_padding(h, w, padding)
@@ -77,19 +77,19 @@ def spatial(clip, ref, precision=3, iterations=1, blur_strength=0, ensemble=True
         bottom_pad = pad_h - top_pad
         left_pad = pad_w // 2
         right_pad = pad_w - left_pad
-        frame2_padded = torch.nn.functional.pad(frame2, (left_pad, right_pad, top_pad, bottom_pad), mode='replicate')
-        frame1_padded = torch.nn.functional.pad(frame1, (left_pad, right_pad, top_pad, bottom_pad), mode='replicate')
-        frame2_padded.clamp_(0, 1)
-        frame1_padded.clamp_(0, 1)
+        fref_padded = torch.nn.functional.pad(fref, (left_pad, right_pad, top_pad, bottom_pad), mode='replicate')
+        fclip_padded = torch.nn.functional.pad(fclip, (left_pad, right_pad, top_pad, bottom_pad), mode='replicate')
+        fref_padded.clamp_(0, 1)
+        fclip_padded.clamp_(0, 1)
 
         #align
         with torch.no_grad():
-            aligned_img0, _ = model(frame1_padded, frame2_padded, multiplier=multiplier, num_iterations=iterations, blur_strength=blur_strength, ensemble=ensemble, device=device)
+            aligned_img0, _ = model(fclip_padded, fref_padded, multiplier=multiplier, num_iterations=iterations, blur_strength=blur_strength, ensemble=ensemble, device=device)
 
         #crop
         output_img_cropped = aligned_img0.squeeze(0)[:, top_pad:top_pad+h, left_pad:left_pad+w]
 
-        fout = f[0].copy()
+        fout = f[1].copy()
         tensor_to_frame(output_img_cropped, fout)
 
         return fout
@@ -99,4 +99,4 @@ def spatial(clip, ref, precision=3, iterations=1, blur_strength=0, ensemble=True
     if ref.format.id != vs.RGBS or ref.format.sample_type != vs.FLOAT:
         raise ValueError("ref must be in RGBS format.")
 
-    return core.std.ModifyFrame(clip=clip, clips=[clip, ref], selector=align)
+    return core.std.ModifyFrame(clip=ref, clips=[clip, ref], selector=align)
