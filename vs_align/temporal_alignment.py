@@ -28,7 +28,6 @@ def vs_pyiqa(clip, ref, iqa_model, device, metric='topiq_fr'):
     return core.std.FrameEval(clip, eval=_evaluate_frame, prop_src=[clip])
 
 def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda" if torch.cuda.is_available() else "cpu", debug=False):
-    from vstools import get_prop
     from pyiqa import create_metric
     
     # convert enums
@@ -155,7 +154,7 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
     do_debug, alignment = debug if isinstance(debug, tuple) else (debug, 7)
 
     def _select(n, f):
-        scores = [get_prop(diff.props, prop_key, float) for diff in f]
+        scores = [float(diff.props[prop_key]) for diff in f]
         best = select_func(indices, key=lambda i: scores[i])
 
         if fallback and any(compare_func(score) for score in scores):
