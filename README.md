@@ -46,7 +46,7 @@ Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be ver
 ## Temporal Alignment
 Syncs two clips timewise by searching through one clip and selecting the frame that most closely matches the reference clip frame. It is recommended trying to minimize the difference between the two clips by preprocessing. For example removing black borders, cropping to the overlapping region, rough color matching, dehaloing. The closer the clips look to each other, the better the temporal alignment will be. Adapted from [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5.
 <p align="center">
-  <img src="README_img2.png" width="700" />
+  <img src="README_img2.png" width="670" />
 </p>
 
     import vs_align
