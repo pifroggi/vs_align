@@ -1,22 +1,23 @@
 # Video Alignment functions for Vapoursynth
-
-Examples: https://slow.pics/c/rqeq3D97
+Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned. For example doing a color transfer, replacing a logo/hardsubs, creating a paired dataset, combining high resolution Bluray chroma with better DVD luma, or similar.
 
 ### Requirements
 * pip install numpy
 * [pytorch](https://pytorch.org/)
-* [vstools](https://github.com/Jaded-Encoding-Thaumaturgy/vs-tools)
 * [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, only for temporal alignment precision=2)
 * pip install pyiqa (optional, only for temporal alignment precision=3)
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, only for temporal alignment with different frame rates)
 
 ### Setup
-Drop the entire "vs_align" folder to where you typically load scripts from.
+Put the entire "vs_align" folder into your scripts folder, or where you typically load scripts from.
 
 <br />
 
 ## Spatial Alignment
-Aligns the content of a frame to a reference frame using a modified [Rife](https://github.com/megvii-research/ECCV2022-RIFE) AI model. Frames should have vague alignment and no black borders before using. Output clip will have the same dimensions as reference clip. Resize reference clip to get desired output scale.
+Aligns the content of a frame to a reference frame using a modified [Rife](https://github.com/megvii-research/ECCV2022-RIFE) AI model. Frames should have no black borders before using. Output clip will have the same dimensions as reference clip. Resize reference clip to get desired output scale. Examples: https://slow.pics/c/rqeq3D97
+<p align="center">
+  <img src="README_img1.png" width="50%" />
+</p>
 
     import vs_align
     clip = vs_align.spatial(clip, ref, precision=3, iterations=1, blur_strength=0, device="cuda")
@@ -32,10 +33,10 @@ __*`precision`*__
 3 works great in most cases.  
 
 __*`iterations`* (optional)__  
-Runs the alignment multiple times to dial it in even further. With more than around 10 passes, artifacts can appear.
+Runs the alignment multiple times to dial it in even further. With more than around 5 passes, artifacts can appear.
 
 __*`blur_strength`* (optional)__  
-Blur is only used internally and will not be visible on the output. It can help to ignore strong degredations like compression, halos or noise. If lines on the output get thinner or thicker, try to increase blur a little. It will reduce accuracy, so try to keep it as low as possible. Good values are 0-10. The best alignment will be at Blur 0. 
+Blur is only used internally and will not be visible on the output. It can help to ignore small details in the alignment process (like compression, noise or halos) and focus more on the general shapes. If lines on the output get thinner or thicker, try to increase blur a little. It will reduce accuracy, so try to keep it as low as possible. Good values are 0-10. The best alignment will be at Blur 0. 
 
 __*`device`* (optional)__  
 Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be very slow on CPU.
@@ -43,7 +44,10 @@ Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be ver
 <br />
 
 ## Temporal Alignment
-Aligns clips timewise by searching through one clip and selecting the frame that most closely matches the reference clip. It is recommended trying to minimize the difference between the two clips by preprocessing. For example removing black borders, cropping to the overlapping region, rough color matching, dehaloing. The closer the clips look to each other, the better the temporal alignment will be. Adapted from [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5.
+Syncs two clips timewise by searching through one clip and selecting the frame that most closely matches the reference clip frame. It is recommended trying to minimize the difference between the two clips by preprocessing. For example removing black borders, cropping to the overlapping region, rough color matching, dehaloing. The closer the clips look to each other, the better the temporal alignment will be. Adapted from [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5.
+<p align="center">
+  <img src="README_img2.png" width="60%" />
+</p>
 
     import vs_align
     clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, device="cuda", debug=False)
@@ -91,5 +95,5 @@ Example: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 ## Tips
 * Enums are available in vs_align/enums.py if needed.
 * For problematic cases of spatial misalignment, it can be helpful to chain multiple alignment calls with increasing precision.
-* Temporal Alignment "precision=3" may need a little time on the first run, as the model needs to download first.
-* Temporal Alignment precision 2 and 3 are at half or quarter resolution still better than precision 1.
+* Temporal Alignment precision=3 may need a little time on the first run, as the model needs to download first.
+* Temporal Alignment precision=2 and 3 are at half or quarter resolution still better than precision 1.
