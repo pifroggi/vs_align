@@ -16,7 +16,7 @@ Put the entire "vs_align" folder into your scripts folder, or where you typicall
 ## Spatial Alignment
 Aligns the content of a frame to a reference frame using a modified [Rife](https://github.com/megvii-research/ECCV2022-RIFE) AI model. Frames should have no black borders before using. Output clip will have the same dimensions as reference clip. Resize reference clip to get desired output scale. Examples: https://slow.pics/c/rqeq3D97
 <p align="center">
-  <img src="README_img1.png" width="50%" />
+  <img src="README_img1.png" width="500" />
 </p>
 
     import vs_align
@@ -46,7 +46,7 @@ Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be ver
 ## Temporal Alignment
 Syncs two clips timewise by searching through one clip and selecting the frame that most closely matches the reference clip frame. It is recommended trying to minimize the difference between the two clips by preprocessing. For example removing black borders, cropping to the overlapping region, rough color matching, dehaloing. The closer the clips look to each other, the better the temporal alignment will be. Adapted from [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5.
 <p align="center">
-  <img src="README_img2.png" width="60%" />
+  <img src="README_img2.png" width="600" />
 </p>
 
     import vs_align
