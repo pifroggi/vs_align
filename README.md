@@ -5,7 +5,7 @@ Useful when two sources are available and you would like to combine them in curt
 * pip install numpy
 * [pytorch](https://pytorch.org/)
 * [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, only for temporal alignment precision=2)
-* pip install pyiqa (optional, only for temporal alignment precision=3)
+* pip install pyiqa && pip install -U setuptools (optional, only for temporal alignment precision=3)
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, only for temporal alignment with different frame rates)
 
 ### Setup
