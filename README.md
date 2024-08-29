@@ -1,5 +1,5 @@
 # Video Alignment functions for Vapoursynth
-Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned. For example doing a color transfer, replacing a logo/hardsubs, creating a paired dataset, combining high resolution Bluray chroma with better DVD luma, or similar.
+Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned. For example doing a color transfer, fixing black crush, replacing a logo/hardsubs, creating a paired dataset, combining high resolution Bluray chroma with better DVD luma, or similar.
 
 ### Requirements
 * [pytorch](https://pytorch.org/)
