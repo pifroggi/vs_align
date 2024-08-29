@@ -2,10 +2,10 @@
 Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned. For example doing a color transfer, replacing a logo/hardsubs, creating a paired dataset, combining high resolution Bluray chroma with better DVD luma, or similar.
 
 ### Requirements
-* pip install numpy
 * [pytorch](https://pytorch.org/)
+* `pip install numpy`
+* `pip install pyiqa && pip install -U setuptools` (optional, only for temporal alignment precision=3)
 * [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) (optional, only for temporal alignment precision=2)
-* pip install pyiqa && pip install -U setuptools (optional, only for temporal alignment precision=3)
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, only for temporal alignment with different frame rates)
 
 ### Setup
@@ -29,14 +29,14 @@ __*`ref`*__
 Reference clip that misaligned clip will be aligned to. Must be in RGBS format.
 
 __*`precision`*__  
-1, 2, 3, 4, or 5. Higher values will internally align at higher resolutions to increase precision. Each step up doubles the internal resolution, which will in turn increase processing time and VRAM usage. Lower values are less precise, but can correct larger misalignments. For problematic cases it can be helpful to chain multiple alignment calls with increasing precision.  
+1, 2, 3, 4, or 5. Higher values will internally align at higher resolutions to increase precision. Each step up doubles the internal resolution, which will in turn increase processing time and VRAM usage. Lower values are less precise, but can correct larger misalignments.
 3 works great in most cases.  
 
 __*`iterations`* (optional)__  
 Runs the alignment multiple times to dial it in even further. With more than around 5 passes, artifacts can appear.
 
 __*`blur_strength`* (optional)__  
-Blur is only used internally and will not be visible on the output. It can help to ignore small details in the alignment process (like compression, noise or halos) and focus more on the general shapes. If lines on the output get thinner or thicker, try to increase blur a little. It will reduce accuracy, so try to keep it as low as possible. Good values are 0-10. The best alignment will be at Blur 0. 
+Blur is only used internally and will not be visible on the output. It can help to ignore small details in the alignment process (like compression, noise or halos) and focus more on the general shapes. If lines on the output get thinner or thicker, try to increase blur a little. It will reduce accuracy, so try to keep it as low as possible. Good values are 0-10. The best alignment will be at blur 0. 
 
 __*`device`* (optional)__  
 Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be very slow on CPU.
@@ -67,7 +67,7 @@ Temporal radius. How many frames it will search forward and back to find a match
 __*`precision`*__  
 | Value | Precision | Speed     | Usecase                                                                           | Method
 | ----- | --------- | --------- | --------------------------------------------------------------------------------- | ------
-| 1     | worst     | very fast | when clips are basically identical besides the temporal misalignment              | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
+| 1     | worst     | very fast | when clips are identical besides the temporal misalignment                        | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
 | 2     | better    | slow      | more robust to differences between clips                                          | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
 | 3     | best      | very slow | extremely accurate with large differences and spatial misalignments between clips | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/tree/main)
 
@@ -92,7 +92,7 @@ Example: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 <br />
 
-## Tips
+## Tips & Troubleshooting
 * Enums are available in vs_align/enums.py if needed.
 * For problematic cases of spatial misalignment, it can be helpful to chain multiple alignment calls with increasing precision.
 * Temporal Alignment precision=3 may need a little time on the first run, as the model needs to download first.
