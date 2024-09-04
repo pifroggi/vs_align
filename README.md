@@ -50,7 +50,7 @@ Syncs two clips timewise by searching through one clip and selecting the frame t
 </p>
 
     import vs_align
-    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, device="cuda", debug=False)
+    clip = vs_align.temporal(clip, ref, clip2, tr=20, precision=1, fallback, thresh=40, device="cuda", fp16=False, debug=False)
 
 __*`clip`*__  
 Misaligned clip. Must be same format and dimensions as ref.
@@ -78,8 +78,8 @@ __*`thresh`* (optional)__
 Threshold for fallback clip. If frame difference is higher than this value, fallback clip is used. Use "debug=True" to get an idea for the values.  
 Does nothing if no fallback clip is set.
 
-__*`device`* (optional)__  
-Possible values are "cuda" to use with an Nvidia GPU, or "cpu".  
+__*`device`, `fp16`* (optional)__  
+"cpu", or "cuda" with an Nvidia GPU. Fp16 will give a slight speed boost and half vram usage if the GPU supports it.  
 Only has an effect with "precision=3", which will be very slow on CPU.  
 
 __*`debug`* (optional)__  
