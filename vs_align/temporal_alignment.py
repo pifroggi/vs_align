@@ -28,7 +28,6 @@ def vs_pyiqa(clip, ref, iqa_model, prop_key, device, fp16):
     return core.std.FrameEval(clip, eval=_evaluate_frame, prop_src=[clip])
 
 def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda" if torch.cuda.is_available() else "cpu", fp16=False, debug=False):
-    from pyiqa import create_metric
     
     # convert enums
     if isinstance(device, Device):
@@ -64,6 +63,7 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
     # precision modes
     iqa_model = None
     if precision == 3:
+        from pyiqa import create_metric
         metric = 'topiq_fr'
         iqa_model = create_metric('topiq_fr', metric_mode='FR', device=torch.device(device)).half() if fp16 else create_metric('topiq_fr', metric_mode='FR', device=torch.device(device))
         process = vs_pyiqa
