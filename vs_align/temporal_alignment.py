@@ -7,27 +7,27 @@ core = vs.core
 
 #adapted from "decimatch" by po5 https://gist.github.com/po5/b6a49662149005922b9127926f96e68b
 
-def frame_to_tensor(frame: vs.VideoFrame, device: str) -> torch.Tensor:
-    array = np.empty((frame.height, frame.width, 3), dtype=np.float32)
+def frame_to_tensor(frame: vs.VideoFrame, device: str, fp16: bool = False) -> torch.Tensor:
+    dtype = np.float16 if fp16 else np.float32
+    array = np.empty((frame.height, frame.width, 3), dtype=dtype)
     for p in range(frame.format.num_planes):
-        array[..., p] = np.asarray(frame[p], dtype=np.float32)
-    tensor = torch.from_numpy(array)
+        array[..., p] = np.asarray(frame[p], dtype=dtype)
+    tensor = torch.from_numpy(array).to(device)
     tensor.clamp_(0, 1)
     return tensor.permute(2, 0, 1).unsqueeze(0)
 
-def vs_pyiqa(clip, ref, iqa_model, device, metric='topiq_fr'):
+def vs_pyiqa(clip, ref, iqa_model, prop_key, device, fp16):
     def _evaluate_frame(n, f):
         ref_frame = ref.get_frame(n)
-        ref_tensor = frame_to_tensor(ref_frame, device)
-        clip_tensor = frame_to_tensor(f, device)
-        score = iqa_model(clip_tensor, ref_tensor).cpu().item()
-        score = 1 - score
-        output_clip = core.std.SetFrameProp(clip, prop='pyiqa_TOPIQ', floatval=score)
+        ref_tensor = frame_to_tensor(ref_frame, device, fp16)
+        clip_tensor = frame_to_tensor(f, device, fp16)
+        score = 1 - iqa_model(clip_tensor, ref_tensor)
+        score = score.cpu().item()
+        output_clip = core.std.SetFrameProp(clip, prop=prop_key, floatval=score)
         return output_clip
-
     return core.std.FrameEval(clip, eval=_evaluate_frame, prop_src=[clip])
 
-def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda" if torch.cuda.is_available() else "cpu", debug=False):
+def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda" if torch.cuda.is_available() else "cpu", fp16=False, debug=False):
     from pyiqa import create_metric
     
     # convert enums
@@ -37,6 +37,8 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
         precision = precision.value
 
     # checks
+    if fp16 and device == "cpu":
+        raise ValueError("Fp16 does not work on CPU.")
     if clip.format.id != ref.format.id:
         raise ValueError("Clip and ref must be the same format.")
     if clip.width != ref.width or clip.height != ref.height:
@@ -63,7 +65,7 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
     iqa_model = None
     if precision == 3:
         metric = 'topiq_fr'
-        iqa_model = create_metric(metric, metric_mode='FR', device=torch.device(device))
+        iqa_model = create_metric('topiq_fr', metric_mode='FR', device=torch.device(device)).half() if fp16 else create_metric('topiq_fr', metric_mode='FR', device=torch.device(device))
         process = vs_pyiqa
         prop_key = "pyiqa_TOPIQ"
         process_name = "TOPIQ"
@@ -103,33 +105,21 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
         clip2 = core.std.AssumeFPS(clip2, fpsnum=ref_num, fpsden=ref_den)
         clip = clip_tivtc
 
-    if precision == 2:
-        #convert to RGB24 for butteraugli based on the color family
-        if clip.format.color_family == vs.YUV:
-            clip = core.resize.Point(clip, format=vs.RGB24, matrix_in_s="709", range_in_s='full', range_s='full')
-            ref = core.resize.Point(ref, format=vs.RGB24, matrix_in_s="709", range_in_s='full', range_s='full')
-        elif clip.format.color_family == vs.RGB:
-            clip = core.resize.Point(clip, format=vs.RGB24)
-            ref = core.resize.Point(ref, format=vs.RGB24)
-        elif clip.format.color_family == vs.GRAY:
-            clip = core.resize.Point(clip, format=vs.RGB24)
-            ref = core.resize.Point(ref, format=vs.RGB24)
-        else:
-            raise ValueError("Unsupported clip format.")
-
-    if precision == 3:
-        #convert to RGBS for butteraugli pyiqa on the color family
-        if clip.format.color_family == vs.YUV:
-            clip = core.resize.Point(clip, format=vs.RGBS, matrix_in_s="709", range_in_s='full', range_s='full')
-            ref = core.resize.Point(ref, format=vs.RGBS, matrix_in_s="709", range_in_s='full', range_s='full')
-        elif clip.format.color_family == vs.RGB:
-            clip = core.resize.Point(clip, format=vs.RGBS)
-            ref = core.resize.Point(ref, format=vs.RGBS)
-        elif clip.format.color_family == vs.GRAY:
-            clip = core.resize.Point(clip, format=vs.RGBS)
-            ref = core.resize.Point(ref, format=vs.RGBS)
-        else:
-            raise ValueError("Unsupported clip format.")
+    #convert to the appropriate format for butteraugli and pyiqa
+    if precision in [2, 3]:
+        format_id = vs.RGBH if precision == 3 and fp16 else vs.RGBS if precision == 3 else vs.RGB24
+        if clip.format.id != format_id:
+            if clip.format.color_family == vs.YUV:
+                clip = core.resize.Point(clip, format=format_id, matrix_in_s="709", range_in_s='full', range_s='full')
+                ref = core.resize.Point(ref, format=format_id, matrix_in_s="709", range_in_s='full', range_s='full')
+            elif clip.format.color_family == vs.RGB:
+                clip = core.resize.Point(clip, format=format_id)
+                ref = core.resize.Point(ref, format=format_id)
+            elif clip.format.color_family == vs.GRAY:
+                clip = core.resize.Point(clip, format=format_id)
+                ref = core.resize.Point(ref, format=format_id)
+            else:
+                raise ValueError("Unsupported clip format.")
 
     #helper function to generate shifts
     def gen_shifts(c, n, forward=True, backward=True):
@@ -149,7 +139,7 @@ def temporal(clip, ref, clip2=None, tr=30, precision=1, fallback=None, thresh=40
         clip = gen_shifts(clip, tr)
         clip2 = gen_shifts(clip2, tr)
 
-    diffs = [process(c, ref, iqa_model, device) if iqa_model else process(c, ref) for c in clip]
+    diffs = [process(c, ref, iqa_model, prop_key, device, fp16) if iqa_model else process(c, ref) for c in clip]
     indices = list(range(len(diffs)))
     do_debug, alignment = debug if isinstance(debug, tuple) else (debug, 7)
 
