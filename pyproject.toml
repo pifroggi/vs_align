@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vs_align"
+version = "1.0.0"
+description = "Video Alignment and Sync functions for Vapoursynth."
+authors = [{ name = "pifroggi" }]
+license = { text = "MIT" }
+
+dependencies = [
+	"torch",
+    "pyiqa",
+    "numpy"
+]
+
+[tool.setuptools.package-data]
+vs_align = ["rife/*.pkl"]
+
+[project.urls]
+Home-page = "https://github.com/pifroggi/vs_align"
+Repository = "https://github.com/pifroggi/vs_align"
