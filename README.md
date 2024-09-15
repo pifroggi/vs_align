@@ -1,5 +1,5 @@
 # Video Alignment functions for Vapoursynth
-Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned. For example doing a color transfer, fixing black crush, replacing a logo/hardsubs, creating a paired dataset, combining high resolution Bluray chroma with better DVD luma, or similar.
+Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned. For example doing a color transfer, patching black crushed areas, transfering textures, creating a paired dataset, combining high resolution Bluray chroma with better DVD luma, or similar.
 
 ### Requirements
 * [pytorch](https://pytorch.org/)
@@ -9,7 +9,8 @@ Useful when two sources are available and you would like to combine them in curt
 * [tivtc](https://github.com/dubhater/vapoursynth-tivtc) (optional, only for temporal alignment with different frame rates)
 
 ### Setup
-Put the entire "vs_align" folder into your scripts folder, or where you typically load scripts from.
+Put the entire `vs_align` folder into your vapoursynth scripts folder.  
+Or install via pip: `pip install git+https://github.com/pifroggi/vs_align.git`
 
 <br />
 
