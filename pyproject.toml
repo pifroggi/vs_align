@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vs_align"
-version = "1.0.0"
-description = "Video Alignment and Sync functions for Vapoursynth."
+version = "2.0.0"
+description = "Video Alignment and Synchronization Functions for Vapoursynth."
 authors = [{ name = "pifroggi" }]
 license = { text = "MIT" }
 
 dependencies = [
-	"torch",
-    "pyiqa",
-    "numpy"
+	"numpy",
+    "torch",
+    "timm"
 ]
 
 [tool.setuptools.package-data]
