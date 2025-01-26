@@ -16,7 +16,9 @@ Or install via pip: `pip install git+https://github.com/pifroggi/vs_align.git`
 ## Spatial Alignment
 Aligns and removes distortions by warping a frame towards a reference frame. See this collection of [Comparisons](https://slow.pics/c/bhfAcZYI) and this one for [Mask Usage](https://slow.pics/c/JsQfwdhF). 
 <p align="center">
-  <img src="README_img1.png" width="500" />
+  <a href="https://slow.pics/c/bhfAcZYI">
+    <img src="README_img1.png" width="500" />
+  </a>
 </p>
 
 ```python
@@ -35,8 +37,7 @@ Use a mask clip to exclude areas (in white) from warping, like for example a wat
 Can be any format and dimensions.
 
 __*`precision`*__  
-Speed/Quality tradeoff in the range 1-4, with higher meaning finer more stable alignment up to a subpixel level. Higher is slower and requires more VRAM.  
-2 or 3 works great in most cases.
+Speed/Quality tradeoff in the range 1-4, with higher meaning finer more stable alignment up to a subpixel level. Higher is slower and requires more VRAM. 2 or 3 works great in most cases.
 
 __*`iterations`* (optional)__  
 Higher iterations can fix larger misalignment > 50 pixel, but are slower. Not needed in most cases. If the misalignment is roughly consistent, a manual shift/crop is recommended over increasing this.
@@ -48,7 +49,7 @@ __*`device`* (optional)__
 Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be very slow on CPU.
 
 > [!TIP]
-> While this is pretty good at aligning very different looking clips (like in the comparisons), you will make it easier and get better results by prefiltering to make ref as close to clip as possible.
+> While this is pretty good at aligning very different looking clips (like in the comparisons), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If clip is cropped, crop ref too so they roughly match. Always crop black bars.
 > - If clip is much brighter than ref, make ref brighter too.  
 > - If the misalignment is larger than around 50 pixels, shift it manually so they roughly align.  
@@ -73,8 +74,7 @@ __*`ref`*__
 Reference clip that unsynched clip will be synched to. Must be same format and dimensions as clip.
 
 __*`out`* (optional)__  
-Output clip from which matched frames are copied. By default, frames are matched and copied from clip. However, if providing an out clip, the script will still use clip and ref for frame matching but will copy the actual frames in the final output from out. A common use case is downscaling clip and ref for faster matching while preserving the original high res frames in the output.  
-Can be any format and dimensions.
+Output clip from which matched frames are copied. By default, frames are matched and copied from clip. However, if providing an out clip, the script will still use clip and ref for frame matching but will copy the actual frames in the final output from out. A common use case is downscaling clip and ref for faster matching while preserving the original high res frames in the output. Can be any format and dimensions.
 
 __*`precision`*__  
 | # | Precision | Speed     | Usecase                                                       | Method
@@ -94,7 +94,7 @@ Threshold for fallback clip. If frames differ more than this value, fallback cli
 
 __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__   
 Numerator and Denominator for clip and ref. For each frame matching round, offsets clip's frames to correctly map to ref's frames, so that during frame matching the right frame pairs are compared without discarding any candidates. Out uses the same Numerator and Denominator as clip. Some slowdown when used.  
-Example usage with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
+Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 __*`device`* (optional)__  
 Possible values are "cuda" to use with an Nvidia GPU, or "cpu". Only affects Precision 3, as the others do not have GPU support.
@@ -106,7 +106,7 @@ Overlays computed difference scores for all frames within the temporal radius, a
 > __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
 
 > [!TIP]
-> __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible.
+> __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If one clip is cropped, crop the other too so they match. Always crop black bars.
 > - If one clip is brighter than the other, you want to make them roughly match.
 > - If one clip has crushed blacks, you want to crush the other too.
@@ -116,8 +116,41 @@ Overlays computed difference scores for all frames within the temporal radius, a
 
 <br />
 
+
+
+
+
+
+
+
+
+
+
+
+
+## Benchmarks
+
+Spatial Alignment
+ 
+| Hardware | Precision | FPS at 720x480 | FPS at 1440x1080
+|   :---:  |   :---:   |      :---:     |      :---:   
+| RTX 4090 | 1         | ~25 fps        | ~22 fps
+| RTX 4090 | 2         | ~18 fps        | ~14 fps
+| RTX 4090 | 3         | ~12 fps        | ~7 fps
+| RTX 4090 | 4         | ~7 fps         | ~2.5 fps
+
+Temporal Alignment
+
+| Hardware    | Precision | TR    | Resolution | FPS
+|    :---:    |   :---:   | :---: |   :---:    |   :---:  
+| Ryzen 5900X | 1         | 20    | 1440x1080  | ~200 fps
+| Ryzen 5900X | 2         | 20    | 480x360    | ~4 fps
+| RTX 4090    | 3         | 20    | 480x360    | ~19 fps
+
+Depending on the GPU, Precision 3 is now faster than 2.
+
+<br />
+
 ## Acknowledgements 
 Spatial Alignment uses code based on [RIFE](https://github.com/hzwer/ECCV2022-RIFE) by hzwer.  
 Temporal Alignment uses code based on [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5 and [IQA-PyTorch](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) by chaofengc, proposed in the paper [TOPIQ](https://arxiv.org/abs/2308.03060) by Chaofeng Chen, Jiadi Mo, Jingwen Hou, Haoning Wu, Liang Liao, Wenxiu Sun, Qiong Yan and Weisi Lin.
-
-
