@@ -94,18 +94,18 @@ def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, debug):
                 for p in m.parameters():
                     p.requires_grad = False
                 m.eval()
- 
+
     def download_model(url, model_dir):
         os.makedirs(model_dir, exist_ok=True)
         file_name = os.path.basename(urlparse(url).path)
         cached_file = os.path.abspath(os.path.join(model_dir, file_name))
         if not os.path.exists(cached_file):
+            logging.info("vs_align: Downloading TOPIQ model into vs_align/topiq.")
             download_url_to_file(url, cached_file, hash_prefix=None, progress=True)
         return cached_file
 
     def load_models(device, fp16):
-        logging.getLogger("timm").setLevel(logging.WARNING) # else it prints info about weigths
-        semantic_model = timm.create_model('resnet50', pretrained=True, features_only=True)
+        semantic_model = timm.create_model("resnet50", pretrained=False, features_only=True)
         semantic_model.to(device)
         semantic_model.eval()
         fix_bn(semantic_model)
