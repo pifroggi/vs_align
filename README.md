@@ -1,4 +1,4 @@
-# Video Alignment functions for Vapoursynth
+# Video Alignment and Synchonization for Vapoursynth
 Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned and synchronized. For example doing a color transfer, patching black crushed areas, transfering textures, creating a paired dataset, combining high res Blu-ray chroma with better DVD luma, or similar.
 
 ### Requirements
@@ -27,10 +27,10 @@ clip = vs_align.spatial(clip, ref, mask=None, precision=3, iterations=1, lq_inpu
 ```
 
 __*`clip`*__  
-Misaligned clip. Can have any dimensions, but output dimensions will match ref. Must be in RGB format.
+Misaligned clip. Must be in RGB format.
 
 __*`ref`*__  
-Reference clip that misaligned clip will be aligned to. Must be in RGB format.
+Reference clip that misaligned clip will be aligned to. Output will have these dimensions. Must be in RGB format.
 
 __*`mask`* (optional)__  
 Use a mask clip to exclude areas (in white) from warping, like for example a watermark or text. Masked areas will instead be warped like the surrounding pixels. Can be a static single frame or a moving mask.  
@@ -49,7 +49,7 @@ __*`device`* (optional)__
 Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be very slow on CPU.
 
 > [!TIP]
-> While this is pretty good at aligning very different looking clips (like in the comparisons), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
+> While this is pretty good at aligning very different looking clips ([see comparisons](https://slow.pics/c/bhfAcZYI)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If clip is cropped, crop ref too so they roughly match. Always crop black bars.
 > - If clip is much brighter than ref, make ref brighter too.  
 > - If the misalignment is larger than around 50 pixels, shift it manually so they roughly align.  
@@ -87,13 +87,13 @@ __*`tr`*__
 Temporal radius determines how many frames to search forwards and backwards for a match. Higher is slower.
 
 __*`fallback`* (optional)__  
-Fallback clip in case no frame below a threshold can be found. Must have the same format and dimensions as clip (or out if used).
+Fallback clip in case no good match is found. Must have the same format and dimensions as clip (or out if used).
 
 __*`thresh`* (optional)__  
 Threshold for fallback clip. If frames differ more than this value, fallback clip is used. Use `debug=True` to get an idea for the values. The ranges differ for each precision value. Does nothing if no fallback clip is set.
 
 __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__   
-Numerator and Denominator for clip and ref. For each frame matching round, offsets clip's frames to correctly map to ref's frames, so that during frame matching the right frame pairs are compared without discarding any candidates. Out uses the same Numerator and Denominator as clip. Some slowdown when used.  
+Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This is used to make sure the function searches for a matching frame in the correct location. Some slowdown when used.  
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 __*`device`* (optional)__  
@@ -112,21 +112,7 @@ Overlays computed difference scores for all frames within the temporal radius, a
 > - If one clip has crushed blacks, you want to crush the other too.
 > - If one clip is black & white and the other is in color, you want to make them both black & white.
 
-
-
 <br />
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## Benchmarks
 
@@ -147,7 +133,7 @@ Temporal Alignment
 | Ryzen 5900X | 2         | 20    | 480x360    | ~4 fps
 | RTX 4090    | 3         | 20    | 480x360    | ~19 fps
 
-Depending on the GPU, Precision 3 is now faster than 2.
+Depending on the GPU, Precision 3 can now be faster than 2.
 
 <br />
 
