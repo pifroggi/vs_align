@@ -199,9 +199,8 @@ class IFNet(nn.Module):
             mask_feather = F.conv2d(mask_grown, feather_inpaint_kernel, padding=feather_inpaint//2).clamp(0, 1)
             mask_feather = F.interpolate(mask_feather, size=(flow_orig.shape[2], flow_orig.shape[3]), mode='bilinear', align_corners=True)
             
-            # convert to float if fp16/autocast
-            if flow.dtype != torch.float32:
-                flow = flow.float()
+            # make sure both tensor are the same dtype due to autocast
+            flow = flow.to(mask_feather.dtype)
             
             # add inpaint to original flow
             return flow_orig.lerp_(flow, mask_feather)
