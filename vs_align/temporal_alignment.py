@@ -303,12 +303,14 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
 
     # convert to appropriate format for topiq and butteraugli
     if precision in [2, 3]:
-        if   precision == 3 and fp16:
+        if   precision == 2 and device == "cpu":
+            format_id = vs.RGB24 # butteraugli cpu
+        elif precision == 2 and device == "cuda":
+            format_id = vs.RGBS  # butteraugli gpu
+        elif precision == 3 and fp16:
             format_id = vs.RGBH  # topiq fp16
-        elif precision == 3:
+        elif precision == 3 and not fp16:
             format_id = vs.RGBS  # topiq fp32
-        else:
-            format_id = vs.RGB24 # butteraugli
         if clip.format.id != format_id:
             if clip.format.color_family == vs.YUV:
                 clip = core.resize.Point(clip, format=format_id, matrix_in_s="709")
@@ -336,14 +338,19 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
     # else do temporal aligment with butteraugli or framestats
     # based on "decimatch" by po5 https://gist.github.com/po5/b6a49662149005922b9127926f96e68b
     else:
-        if precision == 2:
-            method_name = "Butteraugli"
-            method_func = core.julek.Butteraugli
-            prop_key    = "_FrameButteraugli"
-        elif precision == 1:
+        if   precision == 1:
             method_name = "PlaneStats"
             method_func = core.std.PlaneStats
             prop_key    = "PlaneStatsDiff"
+        elif precision == 2 and device == "cpu":
+            method_name = "Butteraugli"
+            method_func = core.julek.Butteraugli
+            prop_key    = "_FrameButteraugli"
+        elif precision == 2 and device == "cuda":
+            method_name = "Butteraugli"
+            method_func = core.vship.BUTTERAUGLI
+            prop_key    = "_BUTTERAUGLI_INFNorm"
+
         else:
             raise TypeError("Precision must be 1, 2, or 3.")
         
