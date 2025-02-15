@@ -5,7 +5,8 @@ Useful when two sources are available and you would like to combine them in curt
 * [pytorch with cuda](https://pytorch.org/)
 * `pip install numpy` 
 * `pip install timm` *(optional, only for Temporal Alignment Precision 3)*
-* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) *(optional, only for Temporal Alignment Precision 2)*
+* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) *(optional, only for Temporal Alignment Precision 2 on CPU)*
+* [Vship](https://github.com/Line-fr/Vship) *(optional, only for Temporal Alignment Precision 2 on GPU)*
 
 ### Setup
 Put the entire `vs_align` folder into your vapoursynth scripts folder.  
@@ -46,7 +47,7 @@ __*`lq_input`* (optional)__
 Enables better handling for low-quality input clips. When set to True general shapes are prioritized over high-frequency details like noise, grain, or compression artifacts by averaging the warping across a small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly thicker/thinner due to warping.
 
 __*`device`* (optional)__  
-Possible values are "cuda" to use with an Nvidia GPU, or "cpu". This will be very slow on CPU.
+Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CPU.
 
 > [!TIP]
 > While this is pretty good at aligning very different looking clips ([see comparisons](https://slow.pics/c/bhfAcZYI)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
@@ -97,7 +98,7 @@ Numerator and Denominator for clip and ref. Only needed if clip and ref have dif
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 __*`device`* (optional)__  
-Possible values are "cuda" to use with an Nvidia GPU, or "cpu". Only affects Precision 3, as the others do not have GPU support.
+Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPUs, Precision 2 supports AMD and Nvidia, Precision 1 has no GPU support.
 
 __*`debug`* (optional)__  
 Overlays computed difference scores for all frames within the temporal radius, and the chosen best match, directly onto the frame.
@@ -118,22 +119,22 @@ Overlays computed difference scores for all frames within the temporal radius, a
 
 Spatial Alignment
  
-| Hardware | Precision | FPS at 720x480 | FPS at 1440x1080
-|   :---:  |   :---:   |      :---:     |      :---:   
-| RTX 4090 | 1         | ~25 fps        | ~22 fps
-| RTX 4090 | 2         | ~18 fps        | ~14 fps
-| RTX 4090 | 3         | ~12 fps        | ~7 fps
-| RTX 4090 | 4         | ~7 fps         | ~2.5 fps
+| Precision | GPU      | At 720x480     | At 1440x1080 
+|   :---:   |   :---:  |      :---:     |      :---:       
+| 1         | RTX 4090 | ~25 fps        | ~22 fps          
+| 2         | RTX 4090 | ~18 fps        | ~14 fps          
+| 3         | RTX 4090 | ~12 fps        | ~7 fps           
+| 4         | RTX 4090 | ~7 fps         | ~2.5 fps         
 
 Temporal Alignment
 
-| Hardware    | Precision | TR    | Resolution | FPS
-|    :---:    |   :---:   | :---: |   :---:    |   :---:  
-| Ryzen 5900X | 1         | 20    | 1440x1080  | ~200 fps
-| Ryzen 5900X | 2         | 20    | 480x360    | ~4 fps
-| RTX 4090    | 3         | 20    | 480x360    | ~19 fps
+| Precision | TR    | Resolution | Ryzen 5900X CPU | RTX 4090 GPU
+|   :---:   | :---: |   :---:    |         :---:        |       :---:    
+| 1         | 20    | 1440x1080  | ~200 fps             | -
+| 2         | 20    | 480x360    | ~4 fps               | ~10 fps
+| 3         | 20    | 480x360    | ~0.4 fps             | ~19 fps
 
-Depending on the GPU, Precision 3 can now be faster than 2.
+Depending on the GPU, Precision 3 can be faster than 2, but needs more VRAM.
 
 <br />
 
