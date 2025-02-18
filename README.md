@@ -112,9 +112,9 @@ Overlays matching scores for all frames within the temporal radius and the best 
 > [!TIP]
 > __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If one clip is cropped, crop the other too so they match. Always crop black bars.
-> - If one clip is brighter than the other, you want to make them roughly match.
-> - If one clip has crushed blacks, you want to crush the other too.
-> - If one clip is black & white and the other is in color, you want to make them both black & white.
+> - If one clip is brighter than the other, make them roughly match.
+> - If one clip has crushed blacks, crush the other too.
+> - If one clip is black & white and the other is in color, make them both black & white.
 
 <br />
 
