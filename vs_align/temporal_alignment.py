@@ -36,7 +36,7 @@ def gen_deletions(duplicates):
 
 
 # using topiq for frame matching
-def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, debug):
+def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, batch_size, debug):
     import timm
     import logging
     import threading
@@ -131,7 +131,7 @@ def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, debug):
         with torch.inference_mode():
             # generate features for ref
             ref_tensor   = frame_to_tensor(f[3], device, fp16) # convert frames to tensors
-            ref_tensor   = (ref_tensor  - mean) / std          # normalize tensors
+            ref_tensor   = (ref_tensor - mean) / std           # normalize tensors
             ref_features = semantic_model(ref_tensor)          # compute features
 
             # collect all features for all candidates
@@ -159,30 +159,35 @@ def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, debug):
             # this groups the features by scale instead, so that each list contains the features of all frames for one scale
             frames_amount = len(clip_features_collected)
             scalewise_candidates = [[] for _ in range(5)]
-            for i in range(frames_amount):
-                feats_for_i = clip_features_collected[i]
+            for feats_for_i in clip_features_collected:
                 for scale in range(5):
                     scalewise_candidates[scale].append(feats_for_i[scale])
 
-            # concatenate along batch dimension
-            clip_features_batched = []
-            ref_features_batched  = []
-            for scale in range(5):
-                clip_scale = torch.cat(scalewise_candidates[scale], dim=0)      # shape [frames_amount, C, H, W]
-                ref_scale  = ref_features[scale].repeat(frames_amount, 1, 1, 1) # replicate reference
-                clip_features_batched.append(clip_scale)
-                ref_features_batched.append(ref_scale)
+            # do inference in multiple batches to limit vram usage
+            scores = []
+            for start in range(0, frames_amount, batch_size):
+                end = min(start + batch_size, frames_amount)
 
-            # compare all features in batch
-            scores = cfanet_model(clip_features_batched, ref_features_batched)  
-            scores = 1 - scores.squeeze(dim=-1) # shape [frames_amount]
+                # concatenate along batch dimension
+                clip_features_batched = []
+                ref_features_batched  = []
+                for scale in range(5):
+                    clip_scale = torch.cat(scalewise_candidates[scale][start:end], dim=0)  # shape [current batch_size, C, H, W]
+                    ref_scale  = ref_features[scale].repeat(end - start, 1, 1, 1)          # replicate reference
+                    clip_features_batched.append(clip_scale)
+                    ref_features_batched.append(ref_scale)
 
+                # compare all features in batch
+                batch_scores = cfanet_model(clip_features_batched, ref_features_batched)
+                scores.append(1 - batch_scores.squeeze(dim=-1))  # shape [current batch_size]
+            
+            scores = torch.cat(scores, dim=0)  # shape [frames_amount]
             below_thresh = (scores < thresh)
             if not below_thresh.any():
                 best_index = None # fallback
             else:
-                best_in_batch = scores[below_thresh].argmin().item()      # find best in current batch
-                best_index = below_thresh.nonzero()[best_in_batch].item() # find absolute frame number of that one
+                best_in_frames = scores[below_thresh].argmin().item()      # find best from current frames
+                best_index = below_thresh.nonzero()[best_in_frames].item() # find absolute frame number of that one
 
             # if no match below tresh, use fallback
             if best_index is None:
@@ -224,7 +229,7 @@ def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, debug):
     return core.std.ModifyFrame(out, clips=[clip, out, shifted, ref], selector=_frame_match)
 
 
-def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.0, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda", debug=False):
+def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.0, clip_num=None, clip_den=None, ref_num=None, ref_den=None, batch_size=None, device="cuda", debug=False):
 
     # convert enums
     if isinstance(device, Device):
@@ -282,6 +287,9 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
         out = clip
     if fallback is None:
         thresh = float('inf')
+    if batch_size is None:
+        batch_size = tr
+    batch_size = batch_size * 2 + 1 # make batch_size scale like tr
     fp16 = device == "cuda" and torch.cuda.get_device_capability()[0] >= 7
 
     ##### prepare clips #####
@@ -333,9 +341,9 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
 
     # do temporal alignment with topiq
     if precision == 3:
-        result = topiq(clip, ref, out, tr, fallback, thresh, device, fp16, debug)
+        result = topiq(clip, ref, out, tr, fallback, thresh, device, fp16, batch_size, debug)
     
-    # else do temporal aligment with butteraugli or framestats
+    # else do temporal aligment with butteraugli or planestats
     # based on "decimatch" by po5 https://gist.github.com/po5/b6a49662149005922b9127926f96e68b
     else:
         if   precision == 1:
@@ -350,7 +358,6 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
             method_name = "Butteraugli"
             method_func = core.vship.BUTTERAUGLI
             prop_key    = "_BUTTERAUGLI_INFNorm"
-
         else:
             raise TypeError("Precision must be 1, 2, or 3.")
         
