@@ -65,7 +65,7 @@ Synchronizes a clip with a reference clip by frame matching. It works by searchi
 
 ```python
 import vs_align
-clip = vs_align.temporal(clip, ref, out=None, tr=20, precision=1, fallback=None, thresh=100.0, clip_num=None, clip_den=None, ref_num=None, ref_den=None, device="cuda", debug=False)
+clip = vs_align.temporal(clip, ref, out=None, tr=20, precision=1, fallback=None, thresh=100.0, clip_num=None, clip_den=None, ref_num=None, ref_den=None, batch_size=None, device="cuda", debug=False)
 ```
 
 __*`clip`*__  
