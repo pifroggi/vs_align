@@ -97,11 +97,14 @@ __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__
 Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This is used to make sure the function searches for a matching frame in the correct location. Some slowdown when used.  
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
+__*`batch_size`* (optional)__  
+If used limits VRAM usage of Precision 3 at the cost of some speed. Higher is faster up to the same value as tr.
+
 __*`device`* (optional)__  
-Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPUs, Precision 2 supports AMD and Nvidia, Precision 1 has no GPU support.
+Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPUs, Precision 2 supports AMD and Nvidia, and Precision 1 has no GPU support.
 
 __*`debug`* (optional)__  
-Overlays computed difference scores for all frames within the temporal radius, and the chosen best match, directly onto the frame.
+Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
 > [!CAUTION]
 > __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
