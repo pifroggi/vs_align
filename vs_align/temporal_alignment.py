@@ -1,6 +1,7 @@
 import vapoursynth as vs
 import numpy as np
 import torch
+import math
 import os
 from .enums import TemporalPrecision, Device
 
@@ -240,6 +241,8 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
     # checks for inputs
     if tr < 1:
         raise ValueError("Temporal radius (tr) must be at least 1.")
+    if batch_size is not None and batch_size < 1:
+        raise ValueError("Batch_size must be at least 1 or None. None uses maximum possible batch_size.")
     if not isinstance(clip, vs.VideoNode):
         raise TypeError("Clip is not a vapoursynth clip.")
     if not isinstance(ref, vs.VideoNode):
@@ -278,9 +281,8 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
     resample_all_set  = all(param is not None for param in [clip_num, clip_den, ref_num, ref_den])
     if not resample_all_none and not resample_all_set:
         raise ValueError("Parameters clip_num, clip_den, ref_num, and ref_den are used together. Set all of them or none.")
-    if resample_all_set and clip_num / clip_den < ref_num / ref_den:
-        raise ValueError("Ref's framerate must be less or equal to clip's framerate.")
-    resample = resample_all_set and clip_num / clip_den != ref_num / ref_den
+    resample_clip = resample_all_set and clip_num / clip_den < ref_num / ref_den
+    resample_ref  = resample_all_set and clip_num / clip_den > ref_num / ref_den
     
     # defaults
     if out is None:
@@ -291,12 +293,20 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
         batch_size = tr
     batch_size = batch_size * 2 + 1 # make batch_size scale like tr
     fp16 = device == "cuda" and torch.cuda.get_device_capability()[0] >= 7
+    ref_orig_length = ref.num_frames
 
     ##### prepare clips #####
-
-    # resample ref to clip's framarate if framerates differ
-    ref_orig_length = ref.num_frames
-    if resample:
+    
+    # if clip's framerate is lower than ref's, resample clip
+    if resample_clip:
+        tr = math.ceil(tr * ((ref_num / ref_den) / (clip_num / clip_den))) # make tr higher to compensate for duplicated frames - not the best solution as this makes it slower (todo: find an easy way to skip comparing against duplicated frames instead)
+        duplicates = gen_duplicates(ref_num, ref_den, clip_num, clip_den, ref.num_frames, clip.num_frames)
+        if duplicates: # if framerates are very close it can happen that no duplicates are generated
+            clip = core.std.DuplicateFrames(clip, frames=duplicates)
+            out  = core.std.DuplicateFrames(out,  frames=duplicates)
+    
+    # if clip's framerate is higher than ref's, resample ref
+    if resample_ref:
         duplicates = gen_duplicates(clip_num, clip_den, ref_num, ref_den, clip.num_frames, ref.num_frames)
         if duplicates: # if framerates are very close it can happen that no duplicates are generated
             ref = core.std.DuplicateFrames(ref, frames=duplicates)
@@ -411,9 +421,12 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
     ##### prepare output #####
 
     # delete duplicate frames from resampling, so that output matches ref's original framerate 
-    if resample and duplicates:
+    if resample_ref and duplicates:
         deletions = gen_deletions(duplicates)
         result    = core.std.DeleteFrames(result, frames=deletions)
+    
+    # update fps prop if needed
+    if resample_ref or resample_clip:
         result    = core.std.AssumeFPS(result, fpsnum=ref_num, fpsden=ref_den)
     
     # trim to ref length and return
