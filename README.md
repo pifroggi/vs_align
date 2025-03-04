@@ -36,13 +36,13 @@ Reference clip that misaligned clip will be aligned to. Output will have these d
 
 __*`mask`* (optional)__  
 Use a mask clip to exclude areas in white from warping, like for example a watermark or text that is only on one clip. Masked areas will instead be warped like the surroundings. Can be a static single frame or a moving mask.  
-Can be any format and dimensions. The masked areas should be relative to the areas on the ref clip.
+Can be any format and dimensions. The masked areas correspond to the same areas on the ref clip.
 
 __*`precision`*__  
 Speed/Quality tradeoff in the range 1-4, with higher meaning finer more stable alignment up to a subpixel level. Higher is slower and requires more VRAM. 2 or 3 works great in most cases.
 
 __*`wide_search`* (optional)__  
-Enables a much larger search radius at the cost of speed. When set to True completely different crops like 4:3 and 16:9, sheering, and rotations up to 45° can be aligned. Recommended if the misalignment is larger than about 20 pixel.
+Enables a larger search radius at the cost of speed. When set to True completely different crops like 4:3 and 16:9, sheering, and rotations up to 45° can be aligned. Recommended if the misalignment is larger than about 20 pixel.
 
 __*`lq_input`* (optional)__  
 Enables better handling for low-quality input clips. When set to True general shapes are prioritized over high-frequency details like noise, grain, or compression artifacts by averaging the warping across a small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly thicker/thinner due to warping.
@@ -144,5 +144,5 @@ Depending on the GPU, Precision 3 can be faster than 2, but needs more VRAM.
 <br />
 
 ## Acknowledgements 
-Spatial Alignment uses code based on [RIFE](https://github.com/hzwer/ECCV2022-RIFE) by hzwer.  
+Spatial Alignment uses code based on [RIFE](https://github.com/hzwer/ECCV2022-RIFE) by hzwer and [XFeat](https://github.com/verlab/accelerated_features) by Guilherme Potje, Felipe Cadar, Andre Araujo, Renato Martins and Erickson R. Nascimento.  
 Temporal Alignment uses code based on [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5 and [IQA-PyTorch](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) by chaofengc, proposed in the paper [TOPIQ](https://arxiv.org/abs/2308.03060) by Chaofeng Chen, Jiadi Mo, Jingwen Hou, Haoning Wu, Liang Liao, Wenxiu Sun, Qiong Yan and Weisi Lin.
