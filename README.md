@@ -3,8 +3,8 @@ Useful when two sources are available and you would like to combine them in curt
 
 ### Requirements
 * [pytorch with cuda](https://pytorch.org/)
+* `pip install opencv-python`
 * `pip install numpy`
-* `pip install opencv-python` 
 * `pip install timm` *(optional, only for Temporal Alignment Precision 3)*
 * [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) *(optional, only for Temporal Alignment Precision 2 on CPU)*
 * [Vship](https://github.com/Line-fr/Vship) *(optional, only for Temporal Alignment Precision 2 on GPU)*
@@ -83,7 +83,7 @@ __*`precision`*__
 | # | Precision | Speed     | Usecase                                                             | Method
 | - | --------- | --------- | ------------------------------------------------------------------- | ------
 | 1 | Worst     | Very Fast | Clips look identical, frames are just in the wrong place.           | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
-| 2 | Better    | Slow      | Slight differences like compression, grain, halos, ligt blur.       | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
+| 2 | Better    | Slow      | Slight differences like compression, grain, halos, blurriness.      | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
 | 3 | Best      | Slow      | Large differences like warping, colors, small spatial misalignment. | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py)
 
 __*`tr`*__  
