@@ -1,5 +1,5 @@
-# Video Alignment and Synchonization for Vapoursynth
-Useful when two sources are available and you would like to combine them in curtain ways, which would only become possible once they are perfectly aligned and synchronized. For example doing a color transfer, patching black crushed areas, transfering textures, creating a paired dataset, combining high res Blu-ray chroma with better DVD luma, or similar.
+# Video Alignment and Synchronization for Vapoursynth
+Useful when two sources are available and you would like to combine them in certain ways, which would only become possible once they are perfectly aligned and synchronized. For example, transferring colors or textures, patching crushed areas, creating paired datasets, combining high res Blu-ray chroma with better DVD luma, or similar.
 
 ### Requirements
 * [pytorch with cuda](https://pytorch.org/)
@@ -7,7 +7,7 @@ Useful when two sources are available and you would like to combine them in curt
 * `pip install numpy`
 * `pip install timm` *(optional, only for Temporal Alignment Precision 3)*
 * [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) *(optional, only for Temporal Alignment Precision 2 on CPU)*
-* [Vship](https://github.com/Line-fr/Vship) *(optional, only for Temporal Alignment Precision 2 on GPU)*
+* [vship](https://github.com/Line-fr/Vship) *(optional, only for Temporal Alignment Precision 2 on GPU)*
 
 ### Setup
 Put the entire `vs_align` folder into your vapoursynth scripts folder.  
@@ -16,10 +16,10 @@ Or install via pip: `pip install git+https://github.com/pifroggi/vs_align.git`
 <br />
 
 ## Spatial Alignment
-Aligns and removes distortions by warping a frame towards a reference frame. See this collection of [Comparisons](https://slow.pics/c/bhfAcZYI) and this one for [Mask Usage](https://slow.pics/c/JsQfwdhF). 
+Aligns and removes distortions by warping a frame towards a reference frame. See this collection of [Comparisons](https://slow.pics/c/T71U8Ewk) and this one for [Mask Usage](https://slow.pics/c/JsQfwdhF). 
 <p align="center">
-  <a href="https://slow.pics/c/bhfAcZYI">
-    <img src="README_img1.png" width="500" />
+  <a href="https://slow.pics/c/T71U8Ewk">
+    <img src="README_img1.png" width="537" />
   </a>
 </p>
 
@@ -35,7 +35,7 @@ __*`ref`*__
 Reference clip that misaligned clip will be aligned to. Output will have these dimensions. Must be in RGB format.
 
 __*`mask`* (optional)__  
-Use a mask clip to exclude areas in white from warping, like for example a watermark or text that is only on one clip. Masked areas will instead be warped like the surroundings. Can be a static single frame or a moving mask.  
+Use a mask clip to exclude areas in white from warping, like a watermark or text that is only on one clip. Masked areas will instead be warped like the surroundings. Can be a static single frame or a moving mask.  
 Can be any format and dimensions. The masked areas correspond to the same areas on the ref clip.
 
 __*`precision`*__  
@@ -51,7 +51,7 @@ __*`device`* (optional)__
 Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CPU.
 
 > [!TIP]
-> While this is pretty good at aligning very different looking clips ([see comparisons](https://slow.pics/c/bhfAcZYI)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
+> While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - Always crop black bars.
 > - If clip has vastly different brightness, make ref roughly match.
 > - If clip has vastly different colors, make ref roughly match.
@@ -62,7 +62,7 @@ Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CP
 ## Temporal Alignment
 Synchronizes a clip with a reference clip by frame matching. It works by searching through a clip and finding the frame that most closely matches the reference clip frame. Sometimes also known as automatic frame remapping.
 <p align="center">
-  <img src="README_img2.png" width="670" />
+  <img src="README_img2.png" width="720" />
 </p>
 
 ```python
@@ -80,9 +80,9 @@ __*`out`* (optional)__
 Output clip from which matched frames are copied. By default, frames are matched and copied from clip. However, if providing an out clip, the script will still use clip and ref for frame matching but will copy the actual frames in the final output from out. A common use case is downscaling clip and ref for faster matching while preserving the original high res frames in the output. Can be any format and dimensions.
 
 __*`precision`*__  
-| # | Precision | Speed     | Usecase                                                             | Method
+| # | Precision | Speed     | Use case                                                            | Method
 | - | --------- | --------- | ------------------------------------------------------------------- | ------
-| 1 | Worst     | Very Fast | Clips look identical, frames are just in the wrong place.           | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
+| 1 | Worst     | Very Fast | Clips are visually identical, but frames are out of order.          | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
 | 2 | Better    | Slow      | Slight differences like compression, grain, halos, blurriness.      | [Butteraugli](https://github.com/dnjulek/vapoursynth-julek-plugin/wiki/Butteraugli)
 | 3 | Best      | Slow      | Large differences like warping, colors, small spatial misalignment. | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py)
 
@@ -109,7 +109,7 @@ __*`debug`* (optional)__
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
 > [!CAUTION]
-> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
+> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p or 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
 
 > [!TIP]
 > __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
@@ -144,5 +144,5 @@ Depending on the GPU, Precision 3 can be faster than 2, but needs more VRAM.
 <br />
 
 ## Acknowledgements 
-Spatial Alignment uses code based on [RIFE](https://github.com/hzwer/ECCV2022-RIFE) by hzwer and [XFeat](https://github.com/verlab/accelerated_features) by Guilherme Potje, Felipe Cadar, Andre Araujo, Renato Martins and Erickson R. Nascimento.  
-Temporal Alignment uses code based on [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5 and [IQA-PyTorch](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) by chaofengc, proposed in the paper [TOPIQ](https://arxiv.org/abs/2308.03060) by Chaofeng Chen, Jiadi Mo, Jingwen Hou, Haoning Wu, Liang Liao, Wenxiu Sun, Qiong Yan and Weisi Lin.
+Spatial Alignment uses code based on [RIFE](https://github.com/hzwer/ECCV2022-RIFE) by hzwer and [XFeat](https://github.com/verlab/accelerated_features) by Guilherme Potje, Felipe Cadar, Andre Araujo, Renato Martins, and Erickson R. Nascimento.  
+Temporal Alignment uses code based on [decimatch](https://gist.github.com/po5/b6a49662149005922b9127926f96e68b) by po5 and [IQA-PyTorch](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) by chaofengc, proposed in the paper [TOPIQ](https://arxiv.org/abs/2308.03060) by Chaofeng Chen, Jiadi Mo, Jingwen Hou, Haoning Wu, Liang Liao, Wenxiu Sun, Qiong Yan, and Weisi Lin.
