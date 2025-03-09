@@ -170,8 +170,8 @@ class IFNet(nn.Module):
 
                 # do one inpaint step (no autocast due to occasional division artifacts)
                 with torch.amp.autocast(device, enabled=False):
-                    inpainted_flow = F.conv2d(masked_flow, kernel_inpaint, padding="same", groups=2)
-                    norm_mask      = F.conv2d(inv_mask,    kernel_norm   , padding="same").clamp_(min=1e-6)
+                    inpainted_flow = F.conv2d(masked_flow.to(torch.float32), kernel_inpaint, padding="same", groups=2)
+                    norm_mask      = F.conv2d(inv_mask.to(torch.float32),    kernel_norm   , padding="same").clamp_(min=1e-6)
                     inpainted_flow /= norm_mask
                 
                 # upscale to add inpaint step
