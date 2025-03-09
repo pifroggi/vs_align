@@ -98,7 +98,7 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
         model_path = os.path.join(current_folder, "xfeat", "xfeat.pt")
         state_dict = torch.load(model_path, map_location=device, weights_only=True)
         descriptor = XFeat(top_k=3000, weights=state_dict, height=480, width=704, device=device)
-        matcher    = XFeat()
+        matcher    = XFeat(device=device)
         if fp16:
             descriptor.half()
             matcher.half()
@@ -137,8 +137,8 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
             if wide_search:
                 # detect points
                 fref = F.pad(fref, (4, 4, 4, 4), mode="replicate") # pad to reduce border artifacts
-                _, _, fref_h,  fref_w  = fref.shape  # update fref_h and fref_w due to padding
-                _, _, fclip_h, fclip_w = fclip.shape # update fref_h and fref_w due to padding
+                _, _, fref_h,  fref_w  = fref.shape  # update height and width due to padding
+                _, _, fclip_h, fclip_w = fclip.shape # update height and width due to padding
                 fclip_points  = descriptor.detectAndCompute(fclip)[0] # compute points
                 fref_points   = descriptor.detectAndCompute(fref)[0]  # compute points
                 kpts1, descs1 = fclip_points["keypoints"], fclip_points["descriptors"]
