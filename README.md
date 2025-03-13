@@ -51,11 +51,12 @@ __*`device`* (optional)__
 Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CPU.
 
 > [!TIP]
-> While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
+> __Alignment Quality:__ While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - Always crop black borders.
-> - If clip has vastly different brightness, make ref roughly match.
-> - If clip has vastly different colors, make ref roughly match.
+> - If clip has vastly different brightness or colors, make ref roughly match.
 
+> [!TIP]
+> __Usage without Vapoursynth:__ Now also usable in the image processing program chaiNNer via the "Align Image to Reference" node. Needed is the [nightly build](https://github.com/chaiNNer-org/chaiNNer-nightly/releases/) 2025-03-12 or newer.
 
 <br />
 
@@ -108,15 +109,15 @@ Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPU
 __*`debug`* (optional)__  
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
-> [!CAUTION]
-> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p or 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
-
 > [!TIP]
 > __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If one clip is cropped, crop the other too so they match as close as possible. Always crop black borders.
 > - If one clip is brighter than the other, make them roughly match.
 > - If one clip has crushed blacks, crush the other too.
 > - If one clip is black & white and the other is in color, make them both black & white.
+
+> [!CAUTION]
+> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p or 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
 
 <br />
 
