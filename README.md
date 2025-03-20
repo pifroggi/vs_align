@@ -97,7 +97,7 @@ __*`thresh`* (optional)__
 Threshold for fallback clip. If frames differ more than this value, fallback clip is used. Use `debug=True` to get an idea for the values. The ranges differ for each precision value. Does nothing if no fallback clip is set.
 
 __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__   
-Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This is used to make sure the function searches for a matching frame in the correct location. Some slowdown when used.  
+Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This is used to make sure the function searches for a matching frame in the correct location.  
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 __*`batch_size`* (optional)__  
@@ -109,6 +109,9 @@ Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPU
 __*`debug`* (optional)__  
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
+> [!CAUTION]
+> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p or 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
+
 > [!TIP]
 > __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If one clip is cropped, crop the other too so they match as close as possible. Always crop black borders.
@@ -116,8 +119,9 @@ Overlays matching scores for all frames within the temporal radius and the best 
 > - If one clip has crushed blacks, crush the other too.
 > - If one clip is black & white and the other is in color, make them both black & white.
 
-> [!CAUTION]
-> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p or 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
+> [!TIP]
+> __Clips with Different Framerates:__ Keep in mind if clip's framerate is lower than ref's, a perfectly matching frame may not always exist in clip. In such cases you *could* warp the closest match into the correct position with `vs_align.spatial()`, or use a fallback clip. This is not an issue if clip's framerate is equal or higher than ref's.
+
 
 <br />
 
