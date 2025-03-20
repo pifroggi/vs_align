@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vs_align"
-version = "3.0.0"
+version = "3.1.0"
 description = "Video Alignment and Synchronization Functions for Vapoursynth."
 authors = [{ name = "pifroggi" }]
 license = { text = "MIT" }
