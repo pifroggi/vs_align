@@ -101,7 +101,7 @@ Numerator and Denominator for clip and ref. Only needed if clip and ref have dif
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 __*`batch_size`* (optional)__  
-Controls VRAM usage of Precision 3. A value lower than tr will reduce VRAM usage, but is slower.
+Controls VRAM usage of Precision 3. A value < tr reduces usage, but is slower. None means maximum batch size.
 
 __*`device`* (optional)__  
 Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPUs, Precision 2 supports AMD and Nvidia, and Precision 1 has no GPU support.
