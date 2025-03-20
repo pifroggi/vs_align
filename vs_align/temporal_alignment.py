@@ -222,7 +222,7 @@ def topiq(clip, ref, out, tr, fallback, thresh, device, fp16, batch_size, debug)
 
             return final_clip.get_frame(final_frame_idx)
         
-    FEATURE_CACHE = LRUFeatureCache(capacity=tr * 2 + 5)
+    FEATURE_CACHE = LRUFeatureCache(capacity=tr * 2 + 3)
     cfanet_model, semantic_model = load_models(device, fp16)
     mean    = torch.tensor([0.485, 0.456, 0.406], device=device, dtype=torch.float16 if fp16 else torch.float32).view(1, 3, 1, 1)
     std     = torch.tensor([0.229, 0.224, 0.225], device=device, dtype=torch.float16 if fp16 else torch.float32).view(1, 3, 1, 1)
@@ -239,8 +239,8 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
         precision = precision.value
 
     # checks for inputs
-    if tr < 1:
-        raise ValueError("Temporal radius (tr) must be at least 1.")
+    if tr < 0:
+        raise ValueError("Temporal radius (tr) can not be negative.")
     if batch_size is not None and batch_size < 1:
         raise ValueError("Batch_size must be at least 1 or None. None uses maximum possible batch_size.")
     if not isinstance(clip, vs.VideoNode):
@@ -383,6 +383,11 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
     
         # selects the clip with the best match to ref for the current frame
         def _select(n, f):
+        
+            # if tr=0, make sure f is still an array
+            if not isinstance(f, list):
+                f = [f]
+
             scores = [float(diff.props[prop_key]) for diff in f]
             best   = min(indices, key=lambda i: scores[i])
 
