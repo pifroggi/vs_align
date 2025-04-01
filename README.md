@@ -110,7 +110,7 @@ __*`debug`* (optional)__
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
 > [!CAUTION]
-> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p or 360p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
+> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
 
 > [!TIP]
 > __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
@@ -120,7 +120,7 @@ Overlays matching scores for all frames within the temporal radius and the best 
 > - If one clip is black & white and the other is in color, make them both black & white.
 
 > [!TIP]
-> __Clips with Different Framerates:__ Keep in mind if clip's framerate is lower than ref's, a perfectly matching frame may not always exist in clip. In such cases you *could* warp the closest match into the correct position with `vs_align.spatial()`, or use a fallback clip. This is not an issue if clip's framerate is equal or higher than ref's.
+> __Clips with Different Framerates:__ Keep in mind if clip's framerate is lower than ref's, a perfectly matching frame may not always exist in clip. If the closest match is not close enough, you *could* warp it into the correct position with `vs_align.spatial()`, use a fallback with interpolated frames, or use ref as fallback. This is not an issue if clip's framerate is equal or higher than ref's.
 
 
 <br />
@@ -141,10 +141,11 @@ Temporal Alignment
 | Precision | TR    | Resolution | Ryzen 5900X CPU | RTX 4090 GPU
 |   :---:   | :---: |   :---:    |         :---:        |       :---:    
 | 1         | 20    | 1440x1080  | ~200 fps             | -
-| 2         | 20    | 480x360    | ~4 fps               | ~10 fps
-| 3         | 20    | 480x360    | ~0.4 fps             | ~19 fps
+| 2         | 20    | 720x480    | ~2 fps               | ~12 fps
+| 3         | 20    | 720x480    | ~0.2 fps             | ~12 fps
 
-Depending on the GPU, Precision 3 can be faster than 2, but needs more VRAM.
+Precision 2 needs much less VRAM than 3.
+
 
 <br />
 
