@@ -94,10 +94,10 @@ __*`fallback`* (optional)__
 Fallback clip in case no good match is found. Must have the same format and dimensions as clip (or out if used).
 
 __*`thresh`* (optional)__  
-Threshold for fallback clip. If frames differ more than this value, fallback clip is used. Use `debug=True` to get an idea for the values. The ranges differ for each precision value. Does nothing if no fallback clip is set.
+Threshold for fallback clip. If frames differ more than this value, fallback clip is used. Use `debug=True` to get an idea for the values. The ranges differ for each precision level. Does nothing if no fallback clip is set.
 
 __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__   
-Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This is used to make sure the function searches for a matching frame in the correct location.  
+Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This tells the function to search for matching frames in the correct location. Can also be used if clips drift out of sync over time.  
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
 __*`batch_size`* (optional)__  
@@ -141,7 +141,7 @@ Temporal Alignment
 | Precision | TR    | Resolution | Ryzen 5900X CPU | RTX 4090 GPU
 |   :---:   | :---: |   :---:    |         :---:        |       :---:    
 | 1         | 20    | 1440x1080  | ~200 fps             | -
-| 2         | 20    | 720x480    | ~2 fps               | ~12 fps
+| 2         | 20    | 720x480    | ~2 fps               | ~14 fps
 | 3         | 20    | 720x480    | ~0.2 fps             | ~12 fps
 
 Precision 2 needs much less VRAM than 3.
