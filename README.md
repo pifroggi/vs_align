@@ -1,5 +1,5 @@
 # Video Alignment and Synchronization for Vapoursynth
-Useful when two sources are available and you would like to combine them in certain ways, which would only become possible once they are perfectly aligned and synchronized. For example, transferring colors or textures, patching crushed areas, creating paired datasets, combining high res Blu-ray chroma with better DVD luma, or similar.
+Useful when two sources are available and you want to combine them in ways that only become possible once they are perfectly aligned and synchronized. For example, transferring colors or textures, removing logos or hardsubs, patching crushed areas, creating paired datasets, combining high res Blu-ray chroma with better DVD luma, or similar.
 
 ### Requirements
 * [pytorch with cuda](https://pytorch.org/)
@@ -45,14 +45,14 @@ __*`wide_search`* (optional)__
 Enables a larger search radius at the cost of speed. When set to True completely different crops like 4:3 and 16:9, shearing, and rotations up to 45° can be aligned. Recommended if the misalignment is larger than about 20 pixel.
 
 __*`lq_input`* (optional)__  
-Enables better handling for low-quality input clips. When set to True general shapes are prioritized over high-frequency details like noise, grain, or compression artifacts by averaging the warping across a small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly thicker/thinner due to warping.
+Enables better handling for low-quality input clips. When set to True general shapes are prioritized over high-frequency details like noise, grain, or compression artifacts by averaging the warping across a small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly thicker/thinner, if that is the case on the reference.
 
 __*`device`* (optional)__  
 Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CPU.
 
 > [!TIP]
 > __Alignment Quality:__ While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
-> - Always crop black borders.
+> - Always crop black borders, if they don't match exactly.
 > - If clip has vastly different brightness or colors, make ref roughly match.
 
 > [!TIP]
