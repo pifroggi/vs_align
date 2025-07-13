@@ -55,15 +55,15 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
     if isinstance(precision, SpatialPrecision):
         precision = precision.value
     if not isinstance(clip, vs.VideoNode):
-        raise TypeError("Clip is not a vapoursynth clip.")
+        raise TypeError("vs_align.spatial: Clip is not a vapoursynth clip.")
     if not isinstance(ref, vs.VideoNode):
-        raise TypeError("Ref is not a vapoursynth clip.")
+        raise TypeError("vs_align.spatial: Ref is not a vapoursynth clip.")
     if mask and not isinstance(mask, vs.VideoNode):
-        raise TypeError("Mask is not a vapoursynth clip.")
+        raise TypeError("vs_align.spatial: Mask is not a vapoursynth clip.")
     if clip.format.color_family != vs.RGB:
-        raise ValueError("Clip must be in RGB format.")
+        raise ValueError("vs_align.spatial: Clip must be in RGB format.")
     if ref.format.color_family  != vs.RGB:
-        raise ValueError("Ref must be in RGB format.")
+        raise ValueError("vs_align.spatial: Ref must be in RGB format.")
 
     # parameters
     blur   =  2 if lq_input else 0
@@ -222,7 +222,7 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
                     fclip = rife_align(fclip, fref, fmask if fmask is not None else None, s3, p3, blur=2,    smooth=7,      compensate=False, device=device, fp16=fp16)
                     fclip = rife_align(fclip, fref, fmask if fmask is not None else None, s4, p4, blur=blur, smooth=smooth, compensate=True,  device=device, fp16=fp16)
                 else:
-                    raise ValueError("Precision must be 1, 2, 3, or 4.")
+                    raise ValueError("vs_align.spatial: Precision must be 1, 2, 3, or 4.")
                 
             if wide_search:
                 if points_found and match_found:
