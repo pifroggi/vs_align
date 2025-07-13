@@ -241,47 +241,47 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
 
     # checks for inputs
     if tr < 0:
-        raise ValueError("Temporal radius (tr) can not be negative.")
+        raise ValueError("vs_align.temporal: Temporal radius (tr) can not be negative.")
     if batch_size is not None and batch_size < 1:
-        raise ValueError("Batch_size must be at least 1 or None. None uses maximum possible batch_size.")
+        raise ValueError("vs_align.temporal: Batch_size must be at least 1 or None. None uses maximum possible batch_size.")
     if not isinstance(clip, vs.VideoNode):
-        raise TypeError("Clip is not a vapoursynth clip.")
+        raise TypeError("vs_align.temporal: Clip is not a vapoursynth clip.")
     if not isinstance(ref, vs.VideoNode):
-        raise TypeError("Ref is not a vapoursynth clip.")
+        raise TypeError("vs_align.temporal: Ref is not a vapoursynth clip.")
     if out is not None and not isinstance(out, vs.VideoNode):
-        raise TypeError("Out is not a vapoursynth clip.")
+        raise TypeError("vs_align.temporal: Out is not a vapoursynth clip.")
     if fallback is not None and not isinstance(fallback, vs.VideoNode):
-        raise TypeError("Fallback is not a vapoursynth clip.")
+        raise TypeError("vs_align.temporal: Fallback is not a vapoursynth clip.")
 
     # checks for format and dimensions
     if clip.format.id != ref.format.id:
-        raise ValueError("Clip and ref must have the same format.")
+        raise ValueError("vs_align.temporal: Clip and ref must have the same format.")
     if clip.width != ref.width or clip.height != ref.height:
-        raise ValueError("Clip and ref must have the same dimensions.")
+        raise ValueError("vs_align.temporal: Clip and ref must have the same dimensions.")
     
     if out is not None and fallback is not None:
         if out.format.id != fallback.format.id:
-            raise ValueError("Out and fallback must have the same format.")
+            raise ValueError("vs_align.temporal: Out and fallback must have the same format.")
         if out.width != fallback.width or out.height != fallback.height:
-            raise ValueError("Out and fallback must have the same dimensions.")
+            raise ValueError("vs_align.temporal: Out and fallback must have the same dimensions.")
     
     if out is None and fallback is not None:
         if clip.format.id != fallback.format.id:
-            raise ValueError("Clip and fallback must have the same format.")
+            raise ValueError("vs_align.temporal: Clip and fallback must have the same format.")
         if clip.width != fallback.width or clip.height != fallback.height:
-            raise ValueError("Clip and fallback must have the same dimensions.")
+            raise ValueError("vs_align.temporal: Clip and fallback must have the same dimensions.")
     
     # checks for clip length
     if fallback is not None and fallback.num_frames < ref.num_frames:
-        raise ValueError("Fallback must be at least as long as ref.")
+        raise ValueError("vs_align.temporal: Fallback must be at least as long as ref.")
     if out is not None and out.num_frames != clip.num_frames:
-        raise ValueError("Out must be the same length as clip.")
+        raise ValueError("vs_align.temporal: Out must be the same length as clip.")
     
     # checks for resampling
     resample_all_none = all(param is None for param in [clip_num, clip_den, ref_num, ref_den])
     resample_all_set  = all(param is not None for param in [clip_num, clip_den, ref_num, ref_den])
     if not resample_all_none and not resample_all_set:
-        raise ValueError("Parameters clip_num, clip_den, ref_num, and ref_den are used together. Set all of them or none.")
+        raise ValueError("vs_align.temporal: Parameters clip_num, clip_den, ref_num, and ref_den are used together. Set all of them or none.")
     resample_clip = resample_all_set and clip_num / clip_den < ref_num / ref_den
     resample_ref  = resample_all_set and clip_num / clip_den > ref_num / ref_den
     
@@ -370,7 +370,7 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
             method_func = functools.partial(core.vship.BUTTERAUGLI, intensity_multiplier=80)
             prop_key    = "_BUTTERAUGLI_INFNorm"
         else:
-            raise TypeError("Precision must be 1, 2, or 3.")
+            raise TypeError("vs_align.temporal: Precision must be 1, 2, or 3.")
         
         # generates a list of clips, each one shifted 1 frame forwards or backwards
         def gen_shifts(c, n, forward=True, backward=True):
