@@ -430,9 +430,12 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
         deletions = gen_deletions(duplicates)
         result    = core.std.DeleteFrames(result, frames=deletions)
     
-    # update fps prop if needed
+    # update fps prop if it was set manually
     if resample_ref or resample_clip:
         result    = core.std.AssumeFPS(result, fpsnum=ref_num, fpsden=ref_den)
+    # copy framerates per frame from ref to fix framerates that are set trough a pattern, which would break after shuffeling frames around
+    else:
+        result    = core.std.CopyFrameProps(result, ref, props=["_DurationNum", "_DurationDen"])
     
     # trim to ref length and return
     if result.num_frames > ref_orig_length:
