@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import math
 import os
+import functools
 from .enums import TemporalPrecision, Device
 
 core = vs.core
@@ -362,11 +363,11 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
             prop_key    = "PlaneStatsDiff"
         elif precision == 2 and device == "cpu":
             method_name = "Butteraugli"
-            method_func = core.julek.Butteraugli
+            method_func = functools.partial(core.julek.Butteraugli, intensity_target=80)
             prop_key    = "_FrameButteraugli"
         elif precision == 2 and device == "cuda":
             method_name = "Butteraugli"
-            method_func = core.vship.BUTTERAUGLI
+            method_func = functools.partial(core.vship.BUTTERAUGLI, intensity_multiplier=80)
             prop_key    = "_BUTTERAUGLI_INFNorm"
         else:
             raise TypeError("Precision must be 1, 2, or 3.")
