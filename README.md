@@ -1,4 +1,4 @@
-# Video Alignment and Synchronization for Vapoursynth
+# Video Alignment and Synchronization for VapourSynth
 Useful when two sources are available and you want to combine them in ways that only become possible once they are perfectly aligned and synchronized. For example, transferring colors or textures, removing logos or hardsubs, patching crushed areas, creating paired datasets, combining high res Blu-ray chroma with better DVD luma, or similar.
 
 ### Requirements
@@ -56,7 +56,7 @@ Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CP
 > - If clip has vastly different brightness or colors, make ref roughly match.
 
 > [!TIP]
-> __Usage without Vapoursynth:__ Now also usable in the image processing program chaiNNer via the "Align Image to Reference" node. Needed is the [nightly build](https://github.com/chaiNNer-org/chaiNNer-nightly/releases/) 2025-03-12 or newer.
+> __Usage without VapourSynth:__ Now also usable in the image processing program chaiNNer via the "Align Image to Reference" node. Needed is the [nightly build](https://github.com/chaiNNer-org/chaiNNer-nightly/releases/) 2025-03-12 or newer.
 
 <br />
 
