@@ -84,7 +84,7 @@ __*`precision`*__
 | # | Precision | Speed     | Use case                                                            | Method
 | - | --------- | --------- | ------------------------------------------------------------------- | ------
 | 1 | Worst     | Very Fast | Clips are visually identical, but frames are out of order.          | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
-| 2 | Better    | Slow      | Slight differences like compression, grain, halos, blurriness.      | [Butteraugli](https://github.com/Line-fr/Vship/wiki/BUTTERAUGLI)
+| 2 | Better    | Slow      | Slight differences like compression, grain, halos, blurriness.      | [Butteraugli](https://github.com/Line-fr/Vship/blob/main/doc/BUTTERAUGLI.md)
 | 3 | Best      | Slow      | Large differences like warping, colors, small spatial misalignment. | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py)
 
 __*`tr`*__  
