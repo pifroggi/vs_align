@@ -7,7 +7,7 @@ Useful when two sources are available and you want to combine them in ways that 
 * `pip install numpy`
 * `pip install timm` *(optional, only for Temporal Alignment Precision 3)*
 * [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) *(optional, only for Temporal Alignment Precision 2 on CPU)*
-* [vship](https://github.com/Line-fr/Vship) *(optional, only for Temporal Alignment Precision 2 on GPU)*
+* [libvship](https://codeberg.org/Line-fr/Vship/releases) *(optional, only for Temporal Alignment Precision 2 on GPU)*
 
 ### Setup
 Put the entire `vs_align` folder into your vapoursynth scripts folder.  
