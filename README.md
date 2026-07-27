@@ -1,8 +1,6 @@
 # Video Alignment and Synchronization for VapourSynth
 Useful when two sources are available and you want to combine them in ways that only become possible once they are perfectly aligned and synchronized. For example, transferring colors or textures, removing logos or hardsubs, patching crushed areas, creating paired datasets, combining high res Blu-ray chroma with better DVD luma, or similar.
 
-<br />
-
 ## Installation
 
 ```
@@ -53,7 +51,7 @@ The backend used to run the alignment model:
 * `cuda` GPU mode. Requires an Nvidia GPU *(fast)*.
 
 > [!TIP]
-> __Alignment Quality:__ While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
+> While this is good at aligning very different looking clips, you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - Always crop black borders, if they don't match exactly.
 > - If clip has vastly different brightness or colors, make ref roughly match.
 
@@ -110,42 +108,109 @@ __*`debug`* (optional)__
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
 > [!TIP]
-> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
+> __Performance:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
 > 
-> __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
+> __Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If one clip is cropped, crop the other too so they match as close as possible. Always crop black borders.
-> - If one clip is brighter than the other, make them roughly match.
+> - If one clip is brighter or has different colors than the other, make them roughly match.
 > - If one clip has crushed blacks, crush the other too.
-> - If one clip is black & white and the other is in color, make them both black & white.
 >
-> __Clips with Different Framerates:__ Keep in mind if clip's framerate is lower than ref's, a perfectly matching frame may not always exist in clip. If the closest match is not close enough, you *could* warp it into the correct position with `vs_align.spatial()`, use a fallback with interpolated frames, or use ref as fallback. This is not an issue if clip's framerate is equal or higher than ref's.
+> __Different Framerates:__ Keep in mind if clip's framerate is set to be lower than ref's, a perfectly matching frame may not always exist in clip. This is not an issue if clip's framerate is equal or higher than ref's.
 
 <br />
 
 ## Benchmarks
+Benchmarks were done on a RTX 4090 GPU and a Ryzen 5900X CPU.
 
-Spatial Alignment
- 
-| Precision | GPU      | 720x480     | 1440x1080 
-|   :---:   |   :---:  |    :---:    |   :---:   
-| 1         | RTX 4090 | ~25 fps     | ~22 fps
-| 2         | RTX 4090 | ~18 fps     | ~14 fps
-| 3         | RTX 4090 | ~15 fps     | ~8 fps
-| 4         | RTX 4090 | ~8 fps      | ~2.5 fps
+<table>
+  <tr>
+    <td valign="top">
 
-Temporal Alignment
+<table>
+  <thead>
+    <tr>
+      <th colspan="3">Spatial Alignment</th>
+    </tr>
+    <tr>
+      <th>Precision</th>
+      <th>720x480</th>
+      <th>1440x1080</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">1</td>
+      <td align="center">~25 fps</td>
+      <td align="center">~22 fps</td>
+    </tr>
+    <tr>
+      <td align="center">2</td>
+      <td align="center">~18 fps</td>
+      <td align="center">~14 fps</td>
+    </tr>
+    <tr>
+      <td align="center">3</td>
+      <td align="center">~15 fps</td>
+      <td align="center">~8 fps</td>
+    </tr>
+    <tr>
+      <td align="center">4</td>
+      <td align="center">~8 fps</td>
+      <td align="center">~2.5 fps</td>
+    </tr>
+  </tbody>
+</table>
 
-| Precision | TR    | Resolution | Ryzen 5900X CPU | RTX 4090 GPU
-|   :---:   | :---: |   :---:    |      :---:      |    :---:    
-| 1         | 20    | 1440x1080  | ~200 fps        | -
-| 2         | 20    | 720x480    | ~2 fps          | ~14 fps
-| 3         | 20    | 720x480    | ~0.2 fps        | ~12 fps
+</td>
+<td valign="top">
+
+<table>
+  <thead>
+    <tr>
+      <th colspan="5">Temporal Alignment</th>
+    </tr>
+    <tr>
+      <th>Precision</th>
+      <th>TR</th>
+      <th>Resolution</th>
+      <th>CPU</th>
+      <th>GPU</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">1</td>
+      <td align="center">20</td>
+      <td align="center">1440x1080</td>
+      <td align="center">~200 fps</td>
+      <td align="center">-</td>
+    </tr>
+    <tr>
+      <td align="center">2</td>
+      <td align="center">20</td>
+      <td align="center">720x480</td>
+      <td align="center">~2 fps</td>
+      <td align="center">~14 fps</td>
+    </tr>
+    <tr>
+      <td align="center">3</td>
+      <td align="center">20</td>
+      <td align="center">720x480</td>
+      <td align="center">~0.2 fps</td>
+      <td align="center">~12 fps</td>
+    </tr>
+  </tbody>
+</table>
+
+</td>
+  </tr>
+</table>
 
 <br />
 
 ## Third-Party Integrations
-* __[chaiNNer](https://github.com/chaiNNer-org/chaiNNer/releases/) (Windows and Linux)__  
-  Image filter and upscaling program with an easy node based GUI. It comes with the Spatial Alingment, called "Align Image to Reference" in chaiNNer. Requires v0.25.0 or newer.
+__[chaiNNer](https://github.com/chaiNNer-org/chaiNNer/releases/) (Windows and Linux)__  
+ChaiNNer is an image filtering and upscaling program with an easy node based GUI. It comes with vs_align's Spatial Alignment which can be used via the "Align Image to Reference" node. Requires v0.25.0 or newer.
 
 <br />
 
