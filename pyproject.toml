@@ -1,29 +1,37 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "vs_align"
-version = "3.2.0"
-description = "Video Alignment and Synchronization Functions for Vapoursynth."
+version = "3.3.0"
+description = "Video Alignment and Synchronization for VapourSynth."
+readme = "README.md"
+requires-python = ">=3.12"
 authors = [{ name = "pifroggi" }]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+
+keywords = [
+	"vapoursynth",
+	"video",
+	"alignment",
+	"synchronization",
+	"filtering"
+]
+
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"Topic :: Multimedia :: Video"
+]
 
 dependencies = [
-	"numpy",
+	"vapoursynth",
     "opencv-python",
-    "torch",
-    "torchvision",
-    "timm"
+	"numpy",
 ]
-
-[tool.setuptools.package-data]
-vs_align = [
-    "rife/*.pkl",
-    "xfeat/*.pt"
-]
-
 
 [project.urls]
-Home-page = "https://github.com/pifroggi/vs_align"
+Homepage = "https://github.com/pifroggi/vs_align"
 Repository = "https://github.com/pifroggi/vs_align"
+Issues = "https://github.com/pifroggi/vs_align/issues"

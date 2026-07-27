@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Device(Enum):
+class Backend(Enum):
     CPU  = "cpu"
     CUDA = "cuda"
 

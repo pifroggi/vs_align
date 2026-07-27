@@ -109,21 +109,18 @@ class IFNet(nn.Module):
 
 
     def align_images(self, fclip, fref, flowmask, time, scales, blur, smooth, ensemble, compensate, device, fp16, fref_h_pad, fref_w_pad, flow2=None, fref_pref=None):
-        def compute_flow(fclip_pref, fref_pref, time, fp16):
+        def compute_flow(fclip_pref, fref_pref, time):
             f0, f1 = self.encode(fclip_pref[:, :3]), self.encode(fref_pref[:, :3])
             flow, mask, block = None, None, [self.block0, self.block1, self.block2, self.block3]
             for i in range(4):
-                inputs = torch.cat((fclip_pref[:, :3], fref_pref[:, :3], f0, f1, time), 1)
                 if flow is None:
+                    inputs = torch.cat((fclip_pref[:, :3], fref_pref[:, :3], f0, f1, time), 1)
                     flow, mask = block[i](inputs, None, scale=scales[i])
                     if ensemble:
                         f_, m_ = block[i](torch.cat((fref_pref[:, :3], fclip_pref[:, :3], f1, f0, 1 - time), 1), None, scale=scales[i])
                         flow, mask = (flow + torch.cat((f_[:, 2:4], f_[:, :2]), 1)) / 2, (mask + (-m_)) / 2
                 else:
-                    if fp16:
-                        wf0, wf1 = warp(f0, flow[:, :2], device).half(), warp(f1, flow[:, 2:4], device).half()
-                    else:
-                        wf0, wf1 = warp(f0, flow[:, :2], device), warp(f1, flow[:, 2:4], device)
+                    wf0, wf1 = warp(f0, flow[:, :2], device), warp(f1, flow[:, 2:4], device)
                     fd, m0 = block[i](torch.cat((fclip_pref[:, :3], fref_pref[:, :3], wf0, wf1, time, mask), 1), flow, scale=scales[i])
                     if ensemble:
                         f_, m_ = block[i](torch.cat((fref_pref[:, :3], fclip_pref[:, :3], wf1, wf0, 1 - time, -mask), 1), torch.cat((flow[:, 2:4], flow[:, :2]), 1), scale=scales[i])
@@ -168,11 +165,10 @@ class IFNet(nn.Module):
                 inv_mask    = 1 - mask_down
                 masked_flow = flow_down * inv_mask
 
-                # do one inpaint step (no autocast due to occasional division artifacts)
-                with torch.amp.autocast(device, enabled=False):
-                    inpainted_flow = F.conv2d(masked_flow.to(torch.float32), kernel_inpaint, padding="same", groups=2)
-                    norm_mask      = F.conv2d(inv_mask.to(torch.float32),    kernel_norm   , padding="same").clamp_(min=1e-6)
-                    inpainted_flow /= norm_mask
+                # do one inpaint step (fp32 due to occasional division artifacts)
+                inpainted_flow = F.conv2d(masked_flow.to(torch.float32), kernel_inpaint, padding="same", groups=2)
+                norm_mask      = F.conv2d(inv_mask.to(torch.float32),    kernel_norm   , padding="same").clamp_(min=1e-6)
+                inpainted_flow /= norm_mask
                 
                 # upscale to add inpaint step
                 flow_up = F.interpolate(inpainted_flow, size=(flow.shape[2], flow.shape[3]), mode="bilinear", align_corners=False)
@@ -191,17 +187,17 @@ class IFNet(nn.Module):
 
             # blur flow
             kernel_size = (flow.shape[2] // 40) * 2 + 1 # blur radius = height/20 but odd
-            kernel_box = torch.ones((1, 1, kernel_size), device=device) / kernel_size
+            kernel_box = (torch.ones((1, 1, kernel_size), device=device) / kernel_size).to(flow.dtype)
             flow = F.conv2d(flow, kernel_box.unsqueeze(2).expand(2, 1, 1, kernel_size), padding=(0, kernel_size // 2), groups=2) # horizontal blur
             flow = F.conv2d(flow, kernel_box.unsqueeze(3).expand(2, 1, kernel_size, 1), padding=(kernel_size // 2, 0), groups=2) # vertical blur
 
             # feather mask
-            mask_orig = F.interpolate(mask_orig, scale_factor=1/8, mode="bilinear", align_corners=True)
-            mask_grown = F.conv2d(mask_orig, grow_mask_kernel, padding=feather_inpaint//2).clamp(0, 1)
-            mask_feather = F.conv2d(mask_grown, feather_inpaint_kernel, padding=feather_inpaint//2).clamp(0, 1)
+            mask_orig = F.interpolate(mask_orig, scale_factor=1/8, mode="bilinear", align_corners=True).to(flow_orig.dtype)
+            mask_grown = F.conv2d(mask_orig, grow_mask_kernel.to(flow_orig.dtype), padding=feather_inpaint//2).clamp(0, 1)
+            mask_feather = F.conv2d(mask_grown, feather_inpaint_kernel.to(flow_orig.dtype), padding=feather_inpaint//2).clamp(0, 1)
             mask_feather = F.interpolate(mask_feather, size=(flow_orig.shape[2], flow_orig.shape[3]), mode="bilinear", align_corners=True)
             
-            # make sure both tensor are the same dtype due to autocast
+            # make sure both tensors are the same dtype
             flow = flow.to(mask_feather.dtype)
             
             # add inpaint to original flow
@@ -227,7 +223,10 @@ class IFNet(nn.Module):
         # pre-blur fclip and fref
         if blur is not None and blur > 0:
             gaussblur = transforms.GaussianBlur(kernel_size=(5, 5), sigma=(blur, blur))
-            fclip_pref = gaussblur(fclip_pref)
+            if fclip_pref.shape[1] == 4:
+                fclip_pref = torch.cat((gaussblur(fclip_pref[:, :3]), fclip_pref[:, 3:4]), 1)
+            else:
+                fclip_pref = gaussblur(fclip_pref)
             if fref_pref_none:
                 fref_pref = gaussblur(fref)
         else:
@@ -235,11 +234,11 @@ class IFNet(nn.Module):
                 fref_pref = fref
 
         # compute flow from fclip_pref to fref_pref
-        flow1 = compute_flow(fclip_pref, fref_pref, time, fp16)
+        flow1 = compute_flow(fclip_pref, fref_pref, time)
         
         # compute flow from fref_pref to itself
         if compensate and flow2 is None:
-            flow2 = compute_flow(fref_pref, fref_pref, time, fp16)
+            flow2 = compute_flow(fref_pref, fref_pref, time)
         
         # extract final flow and subtract flow2 from flow1
         if compensate:
@@ -260,17 +259,14 @@ class IFNet(nn.Module):
         
         # post-smoothing flow
         if smooth is not None and smooth > 0:
-            kernel_box = torch.ones((1, 1, smooth), device=device) / smooth
+            kernel_box = (torch.ones((1, 1, smooth), device=device) / smooth).to(compensated_flow.dtype)
             compensated_flow = F.pad(compensated_flow, (smooth // 2, smooth // 2, 0, 0), mode="reflect")
             compensated_flow = F.conv2d(compensated_flow, kernel_box.unsqueeze(2).expand(2, 1, 1, smooth), groups=2) # horizontal blur
             compensated_flow = F.pad(compensated_flow, (0, 0, smooth // 2, smooth // 2), mode="reflect")
             compensated_flow = F.conv2d(compensated_flow, kernel_box.unsqueeze(3).expand(2, 1, smooth, 1), groups=2) # vertical blur
         
         # warp fclip with compensated flow
-        if fp16:
-            aligned_fclip = warp(fclip, compensated_flow, device).half()
-        else:
-            aligned_fclip = warp(fclip, compensated_flow, device)
+        aligned_fclip = warp(fclip, compensated_flow, device, alpha=fclip.shape[1] == 4)
         
         # calmp and return
         return aligned_fclip.clamp_(0, 1), flow2, fref_pref
@@ -293,7 +289,7 @@ class IFNet(nn.Module):
     ):
         fref_h_pad = fref.shape[2] + pads[0]
         fref_w_pad = fref.shape[3] + pads[1]
-        time       = torch.ones((1, 1, fref_h_pad, fref_w_pad), device=fref.device) * 1
+        time       = torch.ones((1, 1, fref_h_pad, fref_w_pad), device=fref.device, dtype=fref.dtype)
         flow2      = None
         fref_pref  = None
         for _iteration in range(its):

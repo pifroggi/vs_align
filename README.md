@@ -1,31 +1,29 @@
 # Video Alignment and Synchronization for VapourSynth
 Useful when two sources are available and you want to combine them in ways that only become possible once they are perfectly aligned and synchronized. For example, transferring colors or textures, removing logos or hardsubs, patching crushed areas, creating paired datasets, combining high res Blu-ray chroma with better DVD luma, or similar.
 
-### Requirements
-* [pytorch with cuda](https://pytorch.org/)
-* `pip install opencv-python`
-* `pip install numpy`
-* `pip install timm` *(optional, only for Temporal Alignment Precision 3)*
-* [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) *(optional, only for Temporal Alignment Precision 2 on CPU)*
-* [libvship](https://codeberg.org/Line-fr/Vship/releases) *(optional, only for Temporal Alignment Precision 2 on GPU)*
+<br />
 
-### Setup
-Put the entire `vs_align` folder into your vapoursynth scripts folder.  
-Or install via pip: `pip install -U git+https://github.com/pifroggi/vs_align.git`
+## Installation
+
+```
+pip install -U vs_align
+```
+* This package requires [PyTorch with CUDA](https://pytorch.org/get-started/locally/) *(mandatory)*.
+* To enable Temporal Alignment Precision 2, install [libvship](https://codeberg.org/Line-fr/Vship/releases) and [julek-plugin](https://github.com/dnjulek/vapoursynth-julek-plugin) to your plugin directory *(optional)*.
 
 <br />
 
 ## Spatial Alignment
-Aligns and removes distortions by warping a frame towards a reference frame. See this collection of [Comparisons](https://slow.pics/c/T71U8Ewk) and this one for [Mask Usage](https://slow.pics/c/JsQfwdhF). 
+Aligns and removes distortions by warping a clip towards a reference clip. See this collection of [Comparisons](https://slow.pics/c/T71U8Ewk) and this one for [Mask Usage](https://slow.pics/c/JsQfwdhF). 
 <p align="center">
   <a href="https://slow.pics/c/T71U8Ewk">
-    <img src="README_img1.png" width="537" />
+    <img src="https://raw.githubusercontent.com/pifroggi/vs_align/refs/heads/main/README_img1.png" width="537" />
   </a>
 </p>
 
 ```python
 import vs_align
-clip = vs_align.spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False, device="cuda")
+clip = vs_align.spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False, alpha=False, backend="cuda")
 ```
 
 __*`clip`*__  
@@ -35,20 +33,24 @@ __*`ref`*__
 Reference clip that misaligned clip will be aligned to. Output will have these dimensions. Must be in RGB format.
 
 __*`mask`* (optional)__  
-Black & white mask clip where white excludes areas from warping, like a watermark or text that is only on one clip. Masked areas will instead be warped like the surroundings. Can be a static single frame or a moving mask.  
-Can be any format and dimensions. The position of masked areas are based on the ref clip.
+Black & white mask clip where white excludes areas from warping, like a watermark or text that is only on one clip. Masked areas will instead be warped like the surroundings. Can be a static single frame or a moving mask. Can be any format and dimensions. The mask is relative to the ref clip.
 
 __*`precision`*__  
 Speed/Quality tradeoff in the range 1-4, with higher meaning more exact and stable alignment up to a subpixel level. Higher is slower and requires more VRAM. 2 or 3 works great in most cases.
 
 __*`wide_search`* (optional)__  
-Enables a larger search radius at the cost of speed. When set to True completely different crops like 4:3 and 16:9, shearing, and rotations up to 45° can be aligned. Recommended if the misalignment is larger than about 20 pixel.
+Enables a larger search area at the cost of speed. When set to True completely different crops like 4:3 and 16:9, shearing, and rotations up to 45° can be aligned. Recommended if the misalignment is larger than about 20 pixel.
 
 __*`lq_input`* (optional)__  
 Enables better handling for low-quality input clips. When set to True general shapes are prioritized over high-frequency details like noise, grain, or compression artifacts by averaging the warping across a small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly thicker/thinner, if that is the case on the reference.
 
-__*`device`* (optional)__  
-Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CPU.
+__*`alpha`* (optional)__  
+Attaches an alpha channel to the output clip where all pixels from the original frame are white and everything outside is black. To convert the alpha to a clip, use `std.PropToClip()`.
+
+__*`backend`* (optional)__  
+The backend used for frame matching:
+* `cpu` CPU mode *(very slow)*.
+* `cuda` GPU mode. Precision 3 requires an Nvidia GPU *(fast)*.
 
 > [!TIP]
 > __Alignment Quality:__ While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
@@ -63,12 +65,12 @@ Can be "cpu", or "cuda" for use with an Nvidia GPU. This will be very slow on CP
 ## Temporal Alignment
 Synchronizes a clip with a reference clip by frame matching. It works by searching through a clip and finding the frame that most closely matches the reference clip frame. Sometimes also known as automatic frame remapping.
 <p align="center">
-  <img src="README_img2.png" width="720" />
+  <img src="https://raw.githubusercontent.com/pifroggi/vs_align/refs/heads/main/README_img2.png" width="720" />
 </p>
 
 ```python
 import vs_align
-clip = vs_align.temporal(clip, ref, out=None, tr=20, precision=1, fallback=None, thresh=100.0, clip_num=None, clip_den=None, ref_num=None, ref_den=None, batch_size=None, device="cuda", debug=False)
+clip = vs_align.temporal(clip, ref, out=None, tr=20, precision=1, fallback=None, thresh=100.0, clip_num=None, clip_den=None, ref_num=None, ref_den=None, backend="cuda", batch_size=None, debug=False)
 ```
 
 __*`clip`*__  
@@ -81,17 +83,16 @@ __*`out`* (optional)__
 Output clip from which matched frames are copied. By default, frames are matched and copied from clip. However, if providing an out clip, the script will still use clip and ref for frame matching but will copy the actual frames in the final output from out. A common use case is downscaling clip and ref for faster matching while preserving the original high res frames in the output. Can be any format and dimensions.
 
 __*`precision`*__  
-| # | Precision | Speed     | Use case                                                            | Method
-| - | --------- | --------- | ------------------------------------------------------------------- | ------
-| 1 | Worst     | Very Fast | Clips are visually identical, but frames are out of order.          | [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html)
-| 2 | Better    | Slow      | Slight differences like compression, grain, halos, blurriness.      | [Butteraugli](https://github.com/Line-fr/Vship/blob/main/doc/BUTTERAUGLI.md)
-| 3 | Best      | Slow      | Large differences like warping, colors, small spatial misalignment. | [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py)
+Speed/Quality tradeoff in the range 1-3.
+* `1` Clips are visually identical, but frames are out of order. Uses [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html) *(very slow)*.
+* `2` Slight differences like compression, grain, halos, light blurriness. Uses [Butteraugli](https://codeberg.org/Line-fr/Vship/src/branch/main/doc/BUTTERAUGLI.md) *(slow)*.
+* `3` Handles larger differences such as colors, warping, and small spatial misalignment, but ignores small differences and won't match exactly down to the same grain pattern. Uses [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) *(slowest)*.
 
 __*`tr`*__  
 Temporal radius determines how many frames to search forwards and backwards for a match. Higher is slower.
 
 __*`fallback`* (optional)__  
-Fallback clip in case no good match is found. Must have the same format and dimensions as clip (or out if used).
+Fallback clip used when no close match is found. Must have the same format and dimensions as clip (or out if used).
 
 __*`thresh`* (optional)__  
 Threshold for fallback clip. If frames differ more than this value, fallback clip is used. Use `debug=True` to get an idea for the values. The ranges differ for each precision level. Does nothing if no fallback clip is set.
@@ -100,11 +101,13 @@ __*`clip_num`, `clip_den`, `ref_num`, `ref_den`* (optional)__
 Numerator and Denominator for clip and ref. Only needed if clip and ref have different framerates. This tells the function to search for matching frames in the correct location. Can also be used if clips drift out of sync over time.  
 Example with clip at 29.97fps and ref at 23.976fps: `clip_num=30000, clip_den=1001, ref_num=24000, ref_den=1001`
 
-__*`batch_size`* (optional)__  
-Controls VRAM usage of Precision 3. A value < tr reduces usage, but is slower. None means maximum batch size.
+__*`backend`* (optional)__  
+The backend used for frame matching:
+* `cpu` CPU mode *(slow)*.
+* `cuda` GPU mode. Precision 3 requires an Nvidia GPU *(fast)*.
 
-__*`device`* (optional)__  
-Can be "cpu", or "cuda" for use with a GPU. Precision 3 supports only Nvidia GPUs, Precision 2 supports AMD and Nvidia, and Precision 1 has no GPU support.
+__*`batch_size`* (optional)__  
+Controls VRAM usage for Precision 3. A value < tr reduces usage, but is slower. None means maximum batch size.
 
 __*`debug`* (optional)__  
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
@@ -129,23 +132,20 @@ Overlays matching scores for all frames within the temporal radius and the best 
 
 Spatial Alignment
  
-| Precision | GPU      | At 720x480     | At 1440x1080 
-|   :---:   |   :---:  |      :---:     |      :---:       
-| 1         | RTX 4090 | ~25 fps        | ~22 fps          
-| 2         | RTX 4090 | ~18 fps        | ~14 fps          
-| 3         | RTX 4090 | ~15 fps        | ~8 fps           
-| 4         | RTX 4090 | ~8 fps         | ~2.5 fps         
+| Precision | GPU      | 720x480     | 1440x1080 
+|   :---:   |   :---:  |    :---:    |   :---:   
+| 1         | RTX 4090 | ~25 fps     | ~22 fps
+| 2         | RTX 4090 | ~18 fps     | ~14 fps
+| 3         | RTX 4090 | ~15 fps     | ~8 fps
+| 4         | RTX 4090 | ~8 fps      | ~2.5 fps
 
 Temporal Alignment
 
 | Precision | TR    | Resolution | Ryzen 5900X CPU | RTX 4090 GPU
-|   :---:   | :---: |   :---:    |         :---:        |       :---:    
-| 1         | 20    | 1440x1080  | ~200 fps             | -
-| 2         | 20    | 720x480    | ~2 fps               | ~14 fps
-| 3         | 20    | 720x480    | ~0.2 fps             | ~12 fps
-
-Precision 2 needs much less VRAM than 3.
-
+|   :---:   | :---: |   :---:    |      :---:      |    :---:    
+| 1         | 20    | 1440x1080  | ~200 fps        | -
+| 2         | 20    | 720x480    | ~2 fps          | ~14 fps
+| 3         | 20    | 720x480    | ~0.2 fps        | ~12 fps
 
 <br />
 
