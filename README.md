@@ -48,17 +48,14 @@ __*`alpha`* (optional)__
 Attaches an alpha channel to the output clip where all pixels from the original frame are white and everything outside is black. To convert the alpha to a clip, use `std.PropToClip()`.
 
 __*`backend`* (optional)__  
-The backend used for frame matching:
+The backend used to run the alignment model:
 * `cpu` CPU mode *(very slow)*.
-* `cuda` GPU mode. Precision 3 requires an Nvidia GPU *(fast)*.
+* `cuda` GPU mode. Requires an Nvidia GPU *(fast)*.
 
 > [!TIP]
 > __Alignment Quality:__ While this is good at aligning very different looking clips ([see comparisons](https://slow.pics/c/T71U8Ewk)), you will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - Always crop black borders, if they don't match exactly.
 > - If clip has vastly different brightness or colors, make ref roughly match.
-
-> [!TIP]
-> __Usage without VapourSynth:__ Now also usable via the image processing program [chaiNNer](https://github.com/chaiNNer-org/chaiNNer/releases/) with the "Align Image to Reference" node. Requires v0.25.0 or newer.
 
 <br />
 
@@ -112,19 +109,16 @@ Controls VRAM usage for Precision 3. A value < tr reduces usage, but is slower. 
 __*`debug`* (optional)__  
 Overlays matching scores for all frames within the temporal radius and the best match onto the frame.
 
-> [!CAUTION]
-> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
-
 > [!TIP]
+> __Performance Considerations:__ High res frame matching is very slow. For Precision 2 and 3 it is recommended to downscale clip and ref to around 480p and use a high res out clip instead. Both are still very effective at this resolution and far better than Precision 1.
+> 
 > __Frame Matching Quality:__ Even Precision 3 needs the clips to look somewhat similar. You will make it easier and get better results by prefiltering to make ref as close to clip as possible. For example:
 > - If one clip is cropped, crop the other too so they match as close as possible. Always crop black borders.
 > - If one clip is brighter than the other, make them roughly match.
 > - If one clip has crushed blacks, crush the other too.
 > - If one clip is black & white and the other is in color, make them both black & white.
-
-> [!TIP]
+>
 > __Clips with Different Framerates:__ Keep in mind if clip's framerate is lower than ref's, a perfectly matching frame may not always exist in clip. If the closest match is not close enough, you *could* warp it into the correct position with `vs_align.spatial()`, use a fallback with interpolated frames, or use ref as fallback. This is not an issue if clip's framerate is equal or higher than ref's.
-
 
 <br />
 
@@ -146,6 +140,12 @@ Temporal Alignment
 | 1         | 20    | 1440x1080  | ~200 fps        | -
 | 2         | 20    | 720x480    | ~2 fps          | ~14 fps
 | 3         | 20    | 720x480    | ~0.2 fps        | ~12 fps
+
+<br />
+
+## Third-Party Integrations
+* __[chaiNNer](https://github.com/chaiNNer-org/chaiNNer/releases/) (Windows and Linux)__  
+  Image filter and upscaling program with an easy node based GUI. It comes with the Spatial Alingment, called "Align Image to Reference" in chaiNNer. Requires v0.25.0 or newer.
 
 <br />
 
