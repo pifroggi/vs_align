@@ -36,7 +36,7 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
             small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly
             thicker/thinner, if that is the case on the reference.
         alpha: Attaches an alpha channel to the output clip where all pixels from the original frame are white and
-            everything outside is black. To convert the alpha to a clip, use `std.PropToClip()`.
+            everything outside is black. To convert the alpha to a separate clip, use `std.PropToClip()`.
         backend: Backend used to run the alignment model.
             - `cpu` = CPU mode (very slow).
             - `cuda` = GPU mode. Requires an Nvidia GPU (fast).
@@ -62,16 +62,16 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
             import torch
             import torchvision
         except ImportError:
-            raise RuntimeError("vs_align.spatial: This function requires PyTorch and TorchVision. Please install them from https://pytorch.org/ . For the CUDA backend specifically, install them with CUDA support.") from None
+            raise RuntimeError("vs_align.spatial: PyTorch or TorchVision not found. Please install them from https://pytorch.org/. For the CUDA backend specifically, install them with CUDA support.") from None
 
     if device == "cuda":
         try:
             import torch
             import torchvision
         except ImportError:
-            raise RuntimeError("vs_align.spatial: The CUDA backend requires PyTorch and TorchVision with CUDA. Please install versions with CUDA support from https://pytorch.org/ .") from None
+            raise RuntimeError("vs_align.spatial: The CUDA backend requires PyTorch and TorchVision with CUDA. Please install a version with CUDA support from: https://pytorch.org/") from None
         if not torch.cuda.is_available():
-            raise RuntimeError("vs_align.spatial: The CUDA backend requires PyTorch and TorchVision with CUDA, but the installed version has no CUDA support. Please upgrade to versions with CUDA support from https://pytorch.org/ .")
+            raise RuntimeError("vs_align.spatial: The CUDA backend requires PyTorch and TorchVision with CUDA, but the installed version has no CUDA support. Please upgrade: https://pytorch.org/")
 
     import torch.nn.functional as F
     from .rife.IFNet_HDv3_v4_14_align import IFNet
@@ -123,7 +123,13 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
         for p in range(3):
             np.copyto(np.asarray(frame[p]), frame_np[:, :, p])
         if alpha_frame is not None:
-            np.copyto(np.asarray(alpha_frame[0]), frame_np[:, :, 3])
+            alpha_np    = frame_np[:, :, 3]
+            alpha_plane = np.asarray(alpha_frame[0])
+            if alpha_frame.format.sample_type == vs.INTEGER:
+                alpha_plane.fill(0)
+                np.copyto(alpha_plane, (1 << alpha_frame.format.bits_per_sample) - 1, where=alpha_np > 0.5)
+            else:
+                np.copyto(alpha_plane, alpha_np)
 
     def _frame_to_tensor(frame: vs.VideoFrame, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
         frame_np = np.dstack([np.asarray(frame[p]) for p in range(3)])
@@ -183,10 +189,10 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
             matcher.half()
     
     # convert inputs to half if fp16/full if not fp16
-    format_id      = vs.RGBH  if fp16 else vs.RGBS
-    format_id_mask = vs.GRAYH if fp16 else vs.GRAYS
-    alpha_format   = core.get_video_format(format_id_mask)
-    clip_orig_format = clip.format.id
+    format_id        = vs.RGBH  if fp16 else vs.RGBS
+    format_id_mask   = vs.GRAYH if fp16 else vs.GRAYS
+    clip_orig_format = clip.format
+    alpha_format     = clip_orig_format.replace(color_family = vs.GRAY)
     if clip.format.id != format_id:
         clip = core.resize.Point(clip, format = format_id)
     if ref.format.id  != format_id:
@@ -329,6 +335,6 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
     if device == "cuda":
         vs.register_on_destroy(_empty_cuda_cache)
     
-    if clip.format.id != clip_orig_format:
-        return core.resize.Point(clip, format = clip_orig_format)
+    if clip.format.id != clip_orig_format.id:
+        return core.resize.Point(clip, format = clip_orig_format.id)
     return clip
