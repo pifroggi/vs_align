@@ -69,7 +69,7 @@ def spatial(clip, ref, mask=None, precision=3, wide_search=False, lq_input=False
             import torch
             import torchvision
         except ImportError:
-            raise RuntimeError("vs_align.spatial: The CUDA backend requires PyTorch and TorchVision with CUDA. Please install a version with CUDA support from: https://pytorch.org/") from None
+            raise RuntimeError("vs_align.spatial: PyTorch or TorchVision not found. Please install a version with CUDA support from: https://pytorch.org/") from None
         if not torch.cuda.is_available():
             raise RuntimeError("vs_align.spatial: The CUDA backend requires PyTorch and TorchVision with CUDA, but the installed version has no CUDA support. Please upgrade: https://pytorch.org/")
 
