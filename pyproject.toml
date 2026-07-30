@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vs_align"
-version = "3.3.0"
+version = "3.3.1"
 description = "Video Alignment and Synchronization for VapourSynth."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -22,7 +22,8 @@ keywords = [
 
 classifiers = [
 	"Programming Language :: Python :: 3",
-	"Topic :: Multimedia :: Video"
+	"Topic :: Multimedia :: Video",
+    "Environment :: GPU",
 ]
 
 dependencies = [
