@@ -317,22 +317,23 @@ def temporal(clip, ref, out=None, precision=1, tr=20, fallback=None, thresh=100.
         raise ValueError("vs_align.temporal: Backend must be 'cpu' or 'cuda'.")
     if type(precision) is not int:
         raise TypeError("vs_align.temporal: Precision must be an integer.")
+    
     if precision == 3 and backend == "cpu":
         try:
             import torch
             import torchvision
         except ImportError:
-            raise RuntimeError("vs_align.temporal: This function requires PyTorch and TorchVision. Please install them from https://pytorch.org/ . For the CUDA backend specifically, install them with CUDA support.") from None
+            raise RuntimeError("vs_align.temporal: PyTorch or TorchVision not found. Please install them from https://pytorch.org/ or choose a different precision level. For the CUDA backend specifically, install them with CUDA support.") from None
 
     if precision == 3 and backend == "cuda":
         try:
             import torch
             import torchvision
         except ImportError:
-            raise RuntimeError("vs_align.temporal: The CUDA backend requires PyTorch and TorchVision with CUDA. Please install versions with CUDA support from https://pytorch.org/ .") from None
+            raise RuntimeError("vs_align.temporal: PyTorch or TorchVision not found. Please install a version with CUDA support from: https://pytorch.org/") from None
         if not torch.cuda.is_available():
-            raise RuntimeError("vs_align.temporal: The CUDA backend requires PyTorch and TorchVision with CUDA, but the installed version has no CUDA support. Please upgrade to versions with CUDA support from https://pytorch.org/ .")
-
+            raise RuntimeError("vs_align.temporal: The CUDA backend requires PyTorch and TorchVision with CUDA, but the installed version has no CUDA support. Please upgrade: https://pytorch.org/")
+    
     # checks for other dependencies
     if precision == 2 and backend == "cpu" and not hasattr(core, "julek"):
         raise RuntimeError("vs_align.temporal: Precision 2 in CPU mode requires the plugin 'julek-plugin', which is not installed.")
