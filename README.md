@@ -69,7 +69,7 @@ clip = vs_align.temporal(clip, ref, out=None, tr=20, precision=1, fallback=None,
 ```
 
 __*`clip`*__  
-Unsynched clip. Must be same format and dimensions as ref.
+Unsynched clip. Any format.
 
 __*`ref`*__  
 Reference clip that unsynched clip will be synched to. Must be same format and dimensions as clip.
