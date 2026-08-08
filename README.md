@@ -34,7 +34,7 @@ __*`mask`* (optional)__
 Black & white mask clip where white excludes areas from warping, like a watermark or text that is only on one clip. Masked areas will instead be warped like the surroundings. Can be a static single frame or a moving mask. Can be any format and dimensions. The mask is relative to the ref clip.
 
 __*`precision`*__  
-Speed/Quality tradeoff in the range 1-4, with higher meaning more exact and stable alignment up to a subpixel level. Higher is slower and requires more VRAM. 2 or 3 works great in most cases.
+Speed/Quality tradeoff in the 1-4 range, with higher meaning more exact and stable alignment up to a subpixel level. Higher is slower and requires more VRAM. 2 or 3 works great in most cases.
 
 __*`wide_search`* (optional)__  
 Enables a larger search area at the cost of speed. When set to True completely different crops like 4:3 and 16:9, shearing, and rotations up to 45° can be aligned. Recommended if the misalignment is larger than about 20 pixel.
@@ -78,8 +78,8 @@ __*`out`* (optional)__
 Output clip from which matched frames are copied. By default, frames are matched and copied from clip. However, if providing an out clip, the script will still use clip and ref for frame matching but will copy the actual frames in the final output from out. A common use case is downscaling clip and ref for faster matching while preserving the original high res frames in the output. Can be any format and dimensions.
 
 __*`precision`*__  
-Speed/Quality tradeoff in the range 1-3.
-* `1` Clips are visually identical, but frames are out of order. Uses [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html) *(very slow)*.
+Speed/Quality tradeoff. Different levels have different usecases:
+* `1` Clips are visually identical, but frames are out of order. Uses [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html) *(very fast)*.
 * `2` Slight differences like compression, grain, halos, light blurriness. Uses [Butteraugli](https://codeberg.org/Line-fr/Vship/src/branch/main/doc/BUTTERAUGLI.md) *(slow)*.
 * `3` Handles larger differences such as colors, warping, and small spatial misalignment, but ignores small differences and won't match exactly down to the same grain pattern. Uses [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) *(slowest)*.
 
