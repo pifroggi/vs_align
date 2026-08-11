@@ -43,7 +43,7 @@ __*`lq_input`* (optional)__
 Enables better handling for low-quality input clips. When set to True general shapes are prioritized over high-frequency details like noise, grain, or compression artifacts by averaging the warping across a small area. Also fixes an issue sometimes noticeable in 2D animation, where lines can get slightly thicker/thinner, if that is the case on the reference.
 
 __*`alpha`* (optional)__  
-Attaches an alpha channel to the output clip where all pixels from the original frame are white and everything outside is black. To convert the alpha to a clip, use `std.PropToClip()`.
+Attaches an alpha channel to the output clip where all pixels from the original frame are white and everything else is black. To convert the alpha to a separate clip, use `std.PropToClip()`.
 
 __*`backend`* (optional)__  
 The backend used to run the alignment model:
@@ -80,8 +80,8 @@ Output clip from which matched frames are copied. By default, frames are matched
 __*`precision`*__  
 Speed/Quality tradeoff. Different levels have different usecases:
 * `1` Clips are visually identical, but frames are out of order. Uses [PlaneStats](https://www.vapoursynth.com/doc/functions/video/planestats.html) *(very fast)*.
-* `2` Slight differences like compression, grain, halos, light blurriness. Uses [Butteraugli](https://codeberg.org/Line-fr/Vship/src/branch/main/doc/BUTTERAUGLI.md) *(slow)*.
-* `3` Handles larger differences such as colors, warping, and small spatial misalignment, but ignores small differences and won't match exactly down to the same grain pattern. Uses [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) *(slowest)*.
+* `2` Slight differences like compression, grain, halos, light blurriness. Uses [Butteraugli](https://codeberg.org/Line-fr/Vship/src/branch/main/doc/BUTTERAUGLI.md) *(slow, low vram)*.
+* `3` Handles larger differences such as colors, warping, and small spatial misalignment, but ignores small differences and won't match exactly down to the same grain pattern. Uses [TOPIQ](https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/archs/topiq_arch.py) *(slowest, high vram)*.
 
 __*`tr`*__  
 Temporal radius determines how many frames to search forwards and backwards for a match. Higher is slower.
