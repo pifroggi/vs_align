@@ -129,7 +129,7 @@ Benchmarks were done on a RTX 4090 GPU and a Ryzen 5900X CPU.
 <table>
   <thead>
     <tr>
-      <th colspan="3">Spatial Alignment</th>
+      <th colspan="3">Spatial Alignment (GPU)</th>
     </tr>
     <tr>
       <th>Precision</th>
